@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2018.03
+PKG_VERSION:=2019.01
 PKG_RELEASE:=1
 
-PKG_HASH:=7e7477534409d5368eb1371ffde6820f0f79780a1a1f676161c48442cb303dfd
+PKG_HASH:=50bd7e5a466ab828914d080d5f6a432345b500e8fba1ad3b7b61e95e60d51c22
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -18,6 +18,14 @@ include $(INCLUDE_DIR)/package.mk
 define U-Boot/Default
   BUILD_TARGET:=imx6
   UBOOT_IMAGE:=u-boot.imx
+endef
+
+define U-Boot/mx6cuboxi
+   NAME:=SolidRun Cubox-i boards
+   UBOOT_IMAGE:=SPL u-boot.img
+   UBOOT_MAKE_FLAGS:=SPL u-boot.img
+   BUILD_DEVICES:=cubox-i
+   HIDDEN:=1
 endef
 
 define U-Boot/mx6sabresd
@@ -54,6 +62,7 @@ define U-Boot/wandboard
 endef
 
 UBOOT_TARGETS := \
+	mx6cuboxi \
 	mx6sabresd \
 	nitrogen6dl \
 	nitrogen6dl2g \
@@ -64,5 +73,12 @@ UBOOT_TARGETS := \
 	wandboard
 
 UBOOT_MAKE_FLAGS += u-boot.imx
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(foreach img,$(UBOOT_IMAGE), \
+		$(CP) $(PKG_BUILD_DIR)/$(img) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(img); \
+	)
+endef
 
 $(eval $(call BuildPackage/U-Boot))

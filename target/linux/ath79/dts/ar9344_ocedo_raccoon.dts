@@ -10,8 +10,15 @@
 	model = "OCEDO Raccoon";
 	compatible = "ocedo,raccoon", "qca,ar9344";
 
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
 	aliases {
-		led-status = &system;
+		led-boot = &system;
+		led-failsafe = &system;
+		led-running = &system;
+		led-upgrade = &system;
 	};
 
 	leds {
@@ -26,7 +33,6 @@
 		wlan2g {
 			label = "raccoon:yellow:wlan24";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 			linux,default-trigger = "phy0tpt";
 		};
 
@@ -42,15 +48,12 @@
 		wlan5g {
 			label = "raccoon:red:wlan5";
 			gpios = <&ath9k 0 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 			linux,default-trigger = "phy1tpt";
 		};
 	};
 
 	keys {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		poll-interval = <20>;
 
 		reset {
@@ -79,8 +82,6 @@
 	status = "okay";
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;
@@ -102,6 +103,7 @@
 			};
 
 			partition@50000 {
+				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x050000 0x740000>;
 			};
@@ -136,7 +138,7 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@168c,0030 {
+	ath9k: wifi@0,0 {
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
 		mtd-mac-address = <&art 0xc>;

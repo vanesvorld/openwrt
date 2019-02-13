@@ -54,6 +54,9 @@ platform_do_upgrade() {
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
 		;;
+	linksys,ea6350v3)
+		platform_do_upgrade_linksys "$ARGV"
+		;;
 	openmesh,a42 |\
 	openmesh,a62)
 		PART_NAME="inactive"
@@ -83,9 +86,3 @@ platform_nand_pre_upgrade() {
 		;;
 	esac
 }
-
-blink_led() {
-	. /etc/diag.sh; set_state upgrade
-}
-
-append sysupgrade_pre_upgrade blink_led

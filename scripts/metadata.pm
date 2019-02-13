@@ -238,6 +238,7 @@ sub parse_package_metadata($) {
 		/^Build-Types:\s*(.+)\s*$/ and $src->{buildtypes} = [ split /\s+/, $1 ];
 		next unless $pkg;
 		/^Version: \s*(.+)\s*$/ and $pkg->{version} = $1;
+		/^ABIVersion: \s*(.+)\s*$/ and $pkg->{abiversion} = $1;
 		/^Title: \s*(.+)\s*$/ and $pkg->{title} = $1;
 		/^Menu: \s*(.+)\s*$/ and $pkg->{menu} = $1;
 		/^Submenu: \s*(.+)\s*$/ and $pkg->{submenu} = $1;
@@ -250,6 +251,7 @@ sub parse_package_metadata($) {
 			my @vpkg = split /\s+/, $1;
 			@{$pkg->{provides}} = ($pkg->{name}, @vpkg);
 			foreach my $vpkg (@vpkg) {
+				next if ($vpkg eq $pkg->{name});
 				$vpackage{$vpkg} or $vpackage{$vpkg} = [];
 				push @{$vpackage{$vpkg}}, $pkg;
 			}
