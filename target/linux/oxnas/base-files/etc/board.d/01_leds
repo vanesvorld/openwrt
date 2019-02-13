@@ -1,22 +1,20 @@
 #!/bin/sh
 
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
+. /lib/oxnas.sh
 
-board=$(board_name)
+board=$(oxnas_board_name)
 board_config_update
 
 case $board in
-	"akitio,myloud")
-		ucidef_set_led_default "status" "status" "akitio:red:status" "0"
-		;;
-	"mitrastar,stg-212")
+	stg-212)
 		ucidef_set_led_default "power" "power" "zyxel:blue:status" "1"
-		ucidef_set_led_usbdev "usb" "USB" "zyxel:orange:copy" "1-1"
+		ucidef_set_led_usbdev "usb" "USB" "$1" "1-1"
 		;;
-	"shuttle,kd20")
+	kd20)
 		ucidef_set_led_default "power" "power" "kd20:blue:status" "1"
 		;;
-	"cloudengines,pogoplug"*)
+	pogoplugpro | pogoplugv3)
 		ucidef_set_led_default "power" "power" "pogoplug:blue:internal" "1"
 		;;
 

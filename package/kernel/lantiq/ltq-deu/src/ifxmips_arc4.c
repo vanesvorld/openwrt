@@ -242,7 +242,6 @@ static void arc4_crypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 static struct crypto_alg ifxdeu_arc4_alg = {
         .cra_name               =       "arc4",
         .cra_driver_name        =       "ifxdeu-arc4",
-        .cra_priority           =       300,
         .cra_flags              =       CRYPTO_ALG_TYPE_CIPHER,
         .cra_blocksize          =       ARC4_BLOCK_SIZE,
         .cra_ctxsize            =       sizeof(struct arc4_ctx),
@@ -325,7 +324,6 @@ static int ecb_arc4_decrypt(struct blkcipher_desc *desc,
 static struct crypto_alg ifxdeu_ecb_arc4_alg = {
         .cra_name               =       "ecb(arc4)",
         .cra_driver_name        =       "ifxdeu-ecb(arc4)",
-        .cra_priority           =       400,
         .cra_flags              =       CRYPTO_ALG_TYPE_BLKCIPHER,
         .cra_blocksize          =       ARC4_BLOCK_SIZE,
         .cra_ctxsize            =       sizeof(struct arc4_ctx),
@@ -343,11 +341,11 @@ static struct crypto_alg ifxdeu_ecb_arc4_alg = {
         }
 };
 
-/*! \fn int ifxdeu_init_arc4(void)
+/*! \fn int __init ifxdeu_init_arc4(void)
     \ingroup IFX_ARC4_FUNCTIONS
     \brief initialize arc4 driver    
 */                                 
-int ifxdeu_init_arc4(void)
+int __init ifxdeu_init_arc4(void)
 {
     int ret = -ENOSYS;
 
@@ -376,11 +374,11 @@ ecb_arc4_err:
 
 }
 
-/*! \fn void ifxdeu_fini_arc4(void)
+/*! \fn void __exit ifxdeu_fini_arc4(void)
     \ingroup IFX_ARC4_FUNCTIONS
     \brief unregister arc4 driver   
 */                                 
-void ifxdeu_fini_arc4(void)
+void __exit ifxdeu_fini_arc4(void)
 {
         crypto_unregister_alg (&ifxdeu_arc4_alg);
         crypto_unregister_alg (&ifxdeu_ecb_arc4_alg);

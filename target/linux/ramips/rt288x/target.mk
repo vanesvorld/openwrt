@@ -4,10 +4,10 @@
 
 SUBTARGET:=rt288x
 BOARDNAME:=RT288x based boards
-FEATURES+=small_flash
-CPU_TYPE:=24kc
+CPU_TYPE:=mips32r2
+FEATURES:=squashfs gpio
 
-DEFAULT_PACKAGES += kmod-rt2800-soc wpad-mini
+DEFAULT_PACKAGES += kmod-rt2800-soc
 
 define Target/Description
 	Build firmware images for Ralink RT288x based boards.

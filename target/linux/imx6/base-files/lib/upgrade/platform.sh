@@ -1,12 +1,14 @@
 #
-# Copyright (C) 2010-2015 OpenWrt.org
+# Copyright (C) 2010 OpenWrt.org
 #
 
+. /lib/imx6.sh
+
 platform_check_image() {
-	local board=$(board_name)
+	local board=$(imx6_board_name)
 
 	case "$board" in
-	*gw5*)
+	gw54xx)
 		nand_do_platform_check $board $1
 		return $?;
 		;;
@@ -14,14 +16,4 @@ platform_check_image() {
 
 	echo "Sysupgrade is not yet supported on $board."
 	return 1
-}
-
-platform_do_upgrade() {
-	local board=$(board_name)
-
-	case "$board" in
-	*gw5*)
-		nand_do_upgrade "$1"
-		;;
-	esac
 }

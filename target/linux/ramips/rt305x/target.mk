@@ -4,10 +4,12 @@
 
 SUBTARGET:=rt305x
 BOARDNAME:=RT3x5x/RT5350 based boards
-FEATURES+=usb ramdisk small_flash
-CPU_TYPE:=24kc
+ARCH_PACKAGES:=ramips_24kec
+FEATURES+=usb ramdisk
+CPU_TYPE:=24kec
+CPU_SUBTYPE:=dsp
 
-DEFAULT_PACKAGES += kmod-rt2800-soc wpad-mini
+DEFAULT_PACKAGES += kmod-rt2800-soc
 
 define Target/Description
 	Build firmware images for Ralink RT3x5x/RT5350 based boards.

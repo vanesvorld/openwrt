@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2016 OpenWrt.org
+# Copyright (C) 2006-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,24 +8,23 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
-PKG_VERSION:=8.2.1
-PKG_RELEASE:=1
+PKG_VERSION:=7.8
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gdb
-PKG_HASH:=0a6a432907a03c5c8eaad3c3cffd50c00a40c3a5e3c4039440624bae703f2202
+PKG_MD5SUM:=bd958fe9019d7c7896f29f6724a764ed
 
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 PKG_LICENSE:=GPL-3.0+
-PKG_CPE_ID:=cpe:/a:gnu:gdb
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/gdb/Default
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:=+!USE_MUSL:libthread-db +PACKAGE_zlib:zlib @!arc
+  DEPENDS:=+!USE_MUSL:libthread-db +PACKAGE_zlib:zlib
   URL:=http://www.gnu.org/software/gdb/
 endef
 
@@ -56,15 +55,17 @@ CONFIGURE_ARGS+= \
 	--with-system-readline \
 	--without-expat \
 	--without-lzma \
-	--disable-sim \
 	--disable-werror
 
 CONFIGURE_VARS+= \
 	ac_cv_search_tgetent="$(TARGET_LDFLAGS) -lncurses -lreadline"
 
-TARGET_LDFLAGS+= \
-	-static-libstdc++ \
-	-Wl,--gc-sections
+define Build/Compile
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		CPPFLAGS="$(TARGET_CPPFLAGS)" \
+		all
+endef
 
 define Build/Install
 	$(MAKE) -C $(PKG_BUILD_DIR) \

@@ -4,9 +4,6 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-
-JFFS2_BLOCKSIZE = 128k
-
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
@@ -16,11 +13,13 @@ DTBS_DIR:=dts/
 
 LOADADDR:=0x00008000
 
+JFFS2_BLOCKSIZE = 128k
+
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 
 define Image/Build/MkuImage
 	mkimage -A arm -O linux -T kernel -a $(LOADADDR) -C none -e $(LOADADDR) \
-	-n 'ARM $(VERSION_DIST) Linux-$(LINUX_VERSION)' -d $(1) $(2);
+	-n 'ARM OpenWrt Linux-$(LINUX_VERSION)' -d $(1) $(2);
 endef
 
 define Image/Build/DTB

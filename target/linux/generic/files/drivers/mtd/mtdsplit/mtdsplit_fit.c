@@ -45,8 +45,7 @@ struct fdt_header {
 };
 
 static int
-mtdsplit_fit_parse(struct mtd_info *mtd,
-		   const struct mtd_partition **pparts,
+mtdsplit_fit_parse(struct mtd_info *mtd, struct mtd_partition **pparts,
 	           struct mtd_part_parser_data *data)
 {
 	struct fdt_header hdr;
@@ -94,8 +93,8 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	}
 
 	/* Search for the rootfs partition after the FIT image */
-	ret = mtd_find_rootfs_from(mtd, fit_offset + fit_size, mtd->size,
-				   &rootfs_offset, NULL);
+	ret = mtd_find_rootfs_from(mtd, fit_offset + fit_size,
+				   mtd->size, &rootfs_offset);
 	if (ret) {
 		pr_info("no rootfs found after FIT image in \"%s\"\n",
 			mtd->name);
@@ -120,15 +119,9 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	return 2;
 }
 
-static const struct of_device_id mtdsplit_fit_of_match_table[] = {
-	{ .compatible = "denx,fit" },
-	{},
-};
-
 static struct mtd_part_parser uimage_parser = {
 	.owner = THIS_MODULE,
 	.name = "fit-fw",
-	.of_match_table = mtdsplit_fit_of_match_table,
 	.parse_fn = mtdsplit_fit_parse,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };

@@ -8,9 +8,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=swconfig
-PKG_RELEASE:=12
+PKG_RELEASE:=10
 
-PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
@@ -30,19 +30,16 @@ TARGET_CPPFLAGS := \
 	$(TARGET_CPPFLAGS) \
 	-I$(LINUX_DIR)/user_headers/include
 
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
+endef
+
 define Build/Compile
 	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		LIBS="$(TARGET_LDFLAGS) -lnl-tiny -lm -luci -lubox"
-endef
-
-define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/include
-	$(CP) $(PKG_BUILD_DIR)/swlib.h $(1)/usr/include/
-
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libsw.a $(1)/usr/lib/
+		LIBS="$(TARGET_LDFLAGS) -lnl-tiny -lm -luci"
 endef
 
 define Package/swconfig/install

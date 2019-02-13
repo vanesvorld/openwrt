@@ -344,7 +344,6 @@ static struct shash_alg ifxdeu_md5_hmac_alg = {
     .base               =       {
         .cra_name       =       "hmac(md5)",
         .cra_driver_name=       "ifxdeu-md5_hmac",
-        .cra_priority   =       400,
         .cra_ctxsize    =	sizeof(struct md5_hmac_ctx),
         .cra_flags      =       CRYPTO_ALG_TYPE_DIGEST,
         .cra_blocksize  =       MD5_HMAC_BLOCK_SIZE,
@@ -352,11 +351,11 @@ static struct shash_alg ifxdeu_md5_hmac_alg = {
         }
 };
 
-/*! \fn int ifxdeu_init_md5_hmac (void)
+/*! \fn int __init ifxdeu_init_md5_hmac (void)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
  *  \brief initialize md5 hmac driver   
 */                                 
-int ifxdeu_init_md5_hmac (void)
+int __init ifxdeu_init_md5_hmac (void)
 {
 
     int ret = -ENOSYS;
@@ -375,11 +374,11 @@ md5_hmac_err:
     return ret;
 }
 
-/** \fn void ifxdeu_fini_md5_hmac (void)
+/** \fn void __exit ifxdeu_fini_md5_hmac (void)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
  *  \brief unregister md5 hmac driver   
 */                                 
-void ifxdeu_fini_md5_hmac (void)
+void __exit ifxdeu_fini_md5_hmac (void)
 {
     crypto_unregister_shash(&ifxdeu_md5_hmac_alg);
 }

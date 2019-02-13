@@ -1,6 +1,5 @@
 #
-# Copyright (C) 2013-2016 OpenWrt.org
-# Copyright (C) 2017 Yousong Zhou
+# Copyright (C) 2013-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,273 +8,158 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2018.11
+PKG_NAME:=u-boot
+PKG_VERSION:=2015.01
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:= \
+	http://mirror2.openwrt.org/sources \
+	ftp://ftp.denx.de/pub/u-boot
 
-PKG_HASH:=737c93f2ea03fec669e840dbee32bcf6238e6924ff5f20e4f1c472ee24e5d37e
+PKG_MD5SUM:=7f08dc9e98a71652bd6968888ed6ec95
 
-PKG_MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
-include $(INCLUDE_DIR)/u-boot.mk
+PKG_LICENSE:=GPL-2.0 GPL-2.0+
+PKG_LICENSE_FILES:=Licenses/README
+
 include $(INCLUDE_DIR)/package.mk
 
-define U-Boot/Default
-  BUILD_TARGET:=sunxi
-  UBOOT_IMAGE:=u-boot-sunxi-with-spl.bin
-  UENV:=default
-  HIDDEN:=1
+define uboot/Default
+  TITLE:=
+  CONFIG:=
+  IMAGE:=
 endef
 
-define U-Boot/A10-OLinuXino-Lime
-  BUILD_SUBTARGET:=cortexa8
-  NAME:=A10 OLinuXino LIME
-  BUILD_DEVICES:=sun4i-a10-olinuxino-lime
+define uboot/A10-OLinuXino-Lime
+  TITLE:=U-Boot for the A10 OLinuXino LIME
 endef
 
-define U-Boot/A13-OLinuXino
-  BUILD_SUBTARGET:=cortexa8
-  NAME:=A13 OlinuXino
-  BUILD_DEVICES:=sun5i-a13-olinuxino
+define uboot/A13-OLinuXino
+  TITLE:=U-Boot for the A13 OlinuXino
 endef
 
-define U-Boot/A20-OLinuXino-Lime
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=A20 OLinuXino LIME
-  BUILD_DEVICES:=sun7i-a20-olinuxino-lime
+define uboot/A20-OLinuXino-Lime
+  TITLE:=U-Boot for the A20 OLinuXino LIME
 endef
 
-define U-Boot/A20-OLinuXino-Lime2
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=A20 OLinuXino LIME2
-  BUILD_DEVICES:=sun7i-a20-olinuxino-lime2
+define uboot/A20-OLinuXino_MICRO
+  TITLE:=U-Boot for A20 OLinuXino MICRO
 endef
 
-define U-Boot/A20-OLinuXino-Lime2-eMMC
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=A20 OLinuXino LIME2 eMMC
-  BUILD_DEVICES:=sun7i-a20-olinuxino-lime2-emmc
+define uboot/Bananapi
+  TITLE:=U-Boot for Bananapi
 endef
 
-define U-Boot/A20-OLinuXino_MICRO
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=A20 OLinuXino MICRO
-  BUILD_DEVICES:=sun7i-a20-olinuxino-micro
+define uboot/Bananapro
+  TITLE:=U-Boot for Bananapro
 endef
 
-define U-Boot/Bananapi
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Bananapi
-  BUILD_DEVICES:=sun7i-a20-bananapi
+define uboot/Cubieboard
+  TITLE:=U-Boot for Cubieboard
 endef
 
-define U-Boot/Bananapro
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Bananapro
-  BUILD_DEVICES:=sun7i-a20-bananapro
+define uboot/Cubieboard2
+  TITLE:=U-Boot for Cubieboard2
 endef
 
-define U-Boot/Cubieboard
-  BUILD_SUBTARGET:=cortexa8
-  NAME:=Cubieboard
-  BUILD_DEVICES:=sun4i-a10-cubieboard
+define uboot/Cubietruck
+  TITLE:=U-Boot for Cubietruck
 endef
 
-define U-Boot/Cubieboard2
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Cubieboard2
-  BUILD_DEVICES:=sun7i-a20-cubieboard2
+define uboot/Mele_M9
+  TITLE:=U-Boot for the Mele M9 (A31)
 endef
 
-define U-Boot/Cubietruck
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Cubietruck
-  BUILD_DEVICES:=sun7i-a20-cubietruck
+define uboot/OLIMEX_A13_SOM
+  TITLE:=U-Boot for the Olimex A13 SOM
 endef
 
-define U-Boot/Hummingbird_A31
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Hummingbird A31 board
+define uboot/Linksprite_pcDuino
+  TITLE:=U-Boot for Linksprite pcDuino
+endef  
+
+define uboot/Linksprite_pcDuino3
+  TITLE:=U-Boot for Linksprite pcDuino3
+endef  
+
+define uboot/Lamobo_R1
+  TITLE:=U-Boot for Lamobo R1
 endef
 
-define U-Boot/Marsboard_A10
-  BUILD_SUBTARGET:=cortexa8
-  NAME:=Marsboard
-  BUILD_DEVICES:=sun4i-a10-marsboard
-endef
-
-define U-Boot/Mele_M9
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Mele M9 (A31)
-  BUILD_DEVICES:=sun6i-a31-m9
-endef
-
-define U-Boot/OLIMEX_A13_SOM
-  BUILD_SUBTARGET:=cortexa8
-  NAME:=Olimex A13 SOM
-  BUILD_DEVICES:=sun5i-a13-olimex-som
-endef
-
-define U-Boot/Linksprite_pcDuino
-  BUILD_SUBTARGET:=cortexa8
-  NAME:=Linksprite pcDuino
-  BUILD_DEVICES:=sun4i-a10-pcduino
-endef
-
-define U-Boot/Linksprite_pcDuino3
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Linksprite pcDuino3
-  BUILD_DEVICES:=sun7i-a20-pcduino3
-endef
-
-define U-Boot/Lamobo_R1
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Lamobo R1
-  BUILD_DEVICES:=sun7i-a20-lamobo-r1
-endef
-
-define U-Boot/nanopi_m1_plus
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=NanoPi M1 Plus (H3)
-  BUILD_DEVICES:=sun8i-h3-nanopi-m1-plus
-endef
-
-define U-Boot/nanopi_neo
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=U-Boot for NanoPi NEO (H3)
-  BUILD_DEVICES:=sun8i-h3-nanopi-neo
-endef
-
-define U-Boot/orangepi_r1
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Orange Pi R1 (H2+)
-  BUILD_DEVICES:=sun8i-h2-plus-orangepi-r1
-endef
-
-define U-Boot/orangepi_zero
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Orange Pi Zero (H2+)
-  BUILD_DEVICES:=sun8i-h2-plus-orangepi-zero
-endef
-
-define U-Boot/orangepi_pc
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Orange Pi PC (H3)
-  BUILD_DEVICES:=sun8i-h3-orangepi-pc
-endef
-
-define U-Boot/orangepi_plus
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Orange Pi Plus (H3)
-  BUILD_DEVICES:=sun8i-h3-orangepi-plus
-endef
-
-define U-Boot/orangepi_2
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Orange Pi 2 (H3)
-  BUILD_DEVICES:=sun8i-h3-orangepi-2
-endef
-
-define U-Boot/pangolin
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Theobroma A31-yQ7 devboard
-  UENV:=pangolin
-endef
-
-define U-Boot/nanopi_neo_plus2
-  BUILD_SUBTARGET:=cortexa53
-  NAME:=NanoPi NEO Plus2 (H5)
-  BUILD_DEVICES:=sun50i-h5-nanopi-neo-plus2
-  DEPENDS:=+PACKAGE_u-boot-nanopi_neo_plus2:arm-trusted-firmware-sunxi
-  UENV:=a64
-endef
-
-define U-Boot/nanopi_neo2
-  BUILD_SUBTARGET:=cortexa53
-  NAME:=NanoPi NEO2 (H5)
-  BUILD_DEVICES:=sun50i-h5-nanopi-neo2
-  DEPENDS:=+PACKAGE_u-boot-nanopi_neo2:arm-trusted-firmware-sunxi
-  UENV:=a64
-endef
-
-define U-Boot/pine64_plus
-  BUILD_SUBTARGET:=cortexa53
-  NAME:=Pine64 Plus A64
-  BUILD_DEVICES:=sun50i-a64-pine64-plus
-  DEPENDS:=+PACKAGE_u-boot-pine64_plus:arm-trusted-firmware-sunxi
-  UENV:=a64
-endef
-
-define U-Boot/sopine_baseboard
-  BUILD_SUBTARGET:=cortexa53
-  NAME:=Sopine Baseboard
-  BUILD_DEVICES:=sun50i-a64-sopine-baseboard
-  DEPENDS:=+PACKAGE_u-boot-sopine_baseboard:arm-trusted-firmware-sunxi
-  UENV:=a64
-endef
-
-
-define U-Boot/orangepi_zero_plus
-  BUILD_SUBTARGET:=cortexa53
-  NAME:=Xunlong Orange Pi Zero Plus
-  BUILD_DEVICES:=sun50i-h5-orangepi-zero-plus
-  DEPENDS:=+PACKAGE_u-boot-orangepi_zero_plus:arm-trusted-firmware-sunxi
-  UENV:=a64
-endef
-
-define U-Boot/orangepi_pc2
-  BUILD_SUBTARGET:=cortexa53
-  NAME:=Xunlong Orange Pi PC2
-  BUILD_DEVICES:=sun50i-h5-orangepi-pc2
-  DEPENDS:=+PACKAGE_u-boot-orangepi_pc2:arm-trusted-firmware-sunxi
-  UENV:=a64
-endef
-
-UBOOT_TARGETS := \
+UBOOTS:= \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
 	A20-OLinuXino-Lime \
-	A20-OLinuXino-Lime2 \
-	A20-OLinuXino-Lime2-eMMC \
 	A20-OLinuXino_MICRO \
 	Bananapi \
 	Bananapro \
 	Cubieboard \
 	Cubieboard2 \
 	Cubietruck \
-	Hummingbird_A31 \
-	Marsboard_A10 \
 	Mele_M9 \
 	OLIMEX_A13_SOM \
 	Linksprite_pcDuino \
 	Linksprite_pcDuino3 \
 	Lamobo_R1 \
-	nanopi_m1_plus \
-	nanopi_neo \
-	nanopi_neo_plus2 \
-	nanopi_neo2 \
-	orangepi_zero \
-	orangepi_r1 \
-	orangepi_pc \
-	orangepi_plus \
-	orangepi_2 \
-	orangepi_pc2 \
-	pangolin \
-	pine64_plus \
-	sopine_baseboard \
-	orangepi_zero_plus
 
-UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
-
-UBOOT_MAKE_FLAGS += \
-	BL31=$(STAGING_DIR_IMAGE)/bl31.bin
-
-define Build/InstallDev
-	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(CP) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-u-boot-with-spl.bin
-	mkimage -C none -A arm -T script -d uEnv-$(UENV).txt \
-		$(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.scr
+define Package/uboot/template
+define Package/uboot-sunxi-$(1)
+  SECTION:=boot
+  CATEGORY:=Boot Loaders
+  DEPENDS:=@TARGET_sunxi
+  TITLE:=$(2)
+  URL:=http://www.denx.de/wiki/U-Boot
+  VARIANT:=$(1)
+  MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
+endef
 endef
 
-define Package/u-boot/install/default
+define BuildUBootPackage
+	$(eval $(uboot/Default))
+	$(eval $(uboot/$(1)))
+	$(call Package/uboot/template,$(1),$(TITLE))
 endef
 
-$(eval $(call BuildPackage/U-Boot))
+ifdef BUILD_VARIANT
+$(eval $(call uboot/$(BUILD_VARIANT)))
+UBOOT_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
+UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
+endif
+
+define Build/Configure
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		USE_PRIVATE_LIBGCC=yes $(UBOOT_CONFIG)_defconfig
+endef
+
+define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CROSS_COMPILE=$(TARGET_CROSS)
+endef
+
+define Package/uboot/install/default
+	$(CP) $(PKG_BUILD_DIR)/u-boot.bin \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-u-boot.bin
+	$(CP) $(PKG_BUILD_DIR)/spl/sunxi-spl.bin \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-spl.bin
+	$(CP) $(PKG_BUILD_DIR)/u-boot-sunxi-with-spl.bin \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-u-boot-with-spl.bin
+	$(CP) uEnv.txt \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-uEnv.txt
+	mkimage -C none -A arm -T script -d $(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-uEnv.txt \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-boot.scr
+endef
+
+define Package/uboot/install/template
+define Package/uboot-sunxi-$(1)/install
+	$(call Package/uboot/install/default,$(2))
+endef
+endef
+
+$(foreach u,$(UBOOTS), \
+	$(eval $(call Package/uboot/install/template,$(u),$(u))) \
+)
+
+$(foreach u,$(UBOOTS), \
+	$(eval $(call BuildUBootPackage,$(u))) \
+	$(eval $(call BuildPackage,uboot-sunxi-$(u))) \
+)

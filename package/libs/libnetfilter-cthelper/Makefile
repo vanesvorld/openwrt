@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnetfilter_cthelper
 PKG_VERSION:=1.0.0
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/libnetfilter_cthelper/files/ \
 	ftp://ftp.netfilter.org/pub/libnetfilter_cthelper/
-PKG_HASH:=07618e71c4d9a6b6b3dc1986540486ee310a9838ba754926c7d14a17d8fccf3d
+PKG_MD5SUM:=b2efab1a3a198a5add448960ba011acd
 
 PKG_FIXUP:=autoreconf
 PKG_LICENSE:=GPL-2.0+
@@ -30,7 +30,6 @@ define Package/libnetfilter-cthelper
   DEPENDS:=+libmnl
   TITLE:=API to the in-kernel connection tracking helper infrastructure
   URL:=http://www.netfilter.org/projects/libnetfilter_cthelper/
-  ABI_VERSION:=0
 endef
 
 define Package/libnetfilter-cthelper/description

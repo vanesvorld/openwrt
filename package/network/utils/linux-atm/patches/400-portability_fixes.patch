@@ -1,5 +1,6 @@
---- a/src/ilmid/io.c
-+++ b/src/ilmid/io.c
+diff -urN linux-atm-2.5.2/src/ilmid/io.c linux-atm-2.5.2.new/src/ilmid/io.c
+--- linux-atm-2.5.2/src/ilmid/io.c	2008-01-01 01:14:50.000000000 +0100
++++ linux-atm-2.5.2.new/src/ilmid/io.c	2012-11-23 17:32:18.149268039 +0100
 @@ -48,6 +48,14 @@
  			     be manually configured (after ilmid has
  			     registered the "official" address) - HACK */
@@ -15,8 +16,9 @@
  extern SysGroup *remsys;
  extern State ilmi_state;
  static short atm_itf = -1; /* bad value */
---- a/src/mpoad/io.c
-+++ b/src/mpoad/io.c
+diff -urN linux-atm-2.5.2/src/mpoad/io.c linux-atm-2.5.2.new/src/mpoad/io.c
+--- linux-atm-2.5.2/src/mpoad/io.c	2008-01-01 01:14:51.000000000 +0100
++++ linux-atm-2.5.2.new/src/mpoad/io.c	2012-11-23 17:34:17.745271101 +0100
 @@ -10,14 +10,7 @@
  #include <errno.h>
  #include <sys/ioctl.h>
@@ -32,9 +34,10 @@
  #include <atm.h>
  #include <linux/types.h>
  #include <linux/atmioc.h>
---- a/src/sigd/atmsigd.c
-+++ b/src/sigd/atmsigd.c
-@@ -517,7 +517,7 @@ int main(int argc,char **argv)
+diff -urN linux-atm-2.5.2/src/sigd/atmsigd.c linux-atm-2.5.2.new/src/sigd/atmsigd.c
+--- linux-atm-2.5.2/src/sigd/atmsigd.c	2008-01-01 01:14:52.000000000 +0100
++++ linux-atm-2.5.2.new/src/sigd/atmsigd.c	2012-11-23 17:30:38.689265492 +0100
+@@ -517,7 +517,7 @@
  	    exit(0);
  	}
      }
@@ -43,8 +46,9 @@
      poll_loop();
      close_all();
      for (sig = entities; sig; sig = sig->next) stop_saal(&sig->saal);
---- a/src/test/align.c
-+++ b/src/test/align.c
+diff -urN linux-atm-2.5.2/src/test/align.c linux-atm-2.5.2.new/src/test/align.c
+--- linux-atm-2.5.2/src/test/align.c	2001-10-10 00:33:08.000000000 +0200
++++ linux-atm-2.5.2.new/src/test/align.c	2012-11-23 17:25:15.077257206 +0100
 @@ -24,7 +24,7 @@
  #include <signal.h>
  #include <sys/types.h>

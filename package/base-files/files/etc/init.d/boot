@@ -26,9 +26,9 @@ boot() {
 	mkdir -p /var/log
 	mkdir -p /var/lock
 	mkdir -p /var/state
-	mkdir -p /var/tmp
 	mkdir -p /tmp/.uci
 	chmod 0700 /tmp/.uci
+	mkdir -p /tmp/.jail
 	touch /var/log/wtmp
 	touch /var/log/lastlog
 	touch /tmp/resolv.conf.auto
@@ -38,14 +38,24 @@ boot() {
 
 	/sbin/kmodloader
 
-	[ ! -f /etc/config/wireless ] && {
-		# compat for brcm47xx and mvebu
-		sleep 1
-	}
+	# allow wifi modules time to settle
+	sleep 1
 
-	/bin/config_generate
+	/sbin/wifi detect > /tmp/wireless.tmp
+	[ -s /tmp/wireless.tmp ] && {
+		cat /tmp/wireless.tmp >> /etc/config/wireless
+	}
+	rm -f /tmp/wireless.tmp
+
+	/bin/board_detect
 	uci_apply_defaults
 	
 	# temporary hack until configd exists
 	/sbin/reload_config
+
+	# create /dev/root if it doesn't exist
+	[ -e /dev/root -o -h /dev/root ] || {
+		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
+		[ -n "$rootdev" ] && ln -s "$rootdev" /dev/root
+	}
 }

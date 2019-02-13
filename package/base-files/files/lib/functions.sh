@@ -57,16 +57,16 @@ config () {
 	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=$(($CONFIG_NUM_SECTIONS + 1))
 	name="${name:-cfg$CONFIG_NUM_SECTIONS}"
 	append CONFIG_SECTIONS "$name"
-	export ${NO_EXPORT:+-n} CONFIG_SECTION="$name"
-	config_set "$CONFIG_SECTION" "TYPE" "${cfgtype}"
 	[ -n "$NO_CALLBACK" ] || config_cb "$cfgtype" "$name"
+	export ${NO_EXPORT:+-n} CONFIG_SECTION="$name"
+	export ${NO_EXPORT:+-n} "CONFIG_${CONFIG_SECTION}_TYPE=$cfgtype"
 }
 
 option () {
 	local varname="$1"; shift
 	local value="$*"
 
-	config_set "$CONFIG_SECTION" "${varname}" "${value}"
+	export ${NO_EXPORT:+-n} "CONFIG_${CONFIG_SECTION}_${varname}=$value"
 	[ -n "$NO_CALLBACK" ] || option_cb "$varname" "$*"
 }
 
@@ -81,7 +81,7 @@ list() {
 	config_set "$CONFIG_SECTION" "${varname}_ITEM$len" "$value"
 	config_set "$CONFIG_SECTION" "${varname}_LENGTH" "$len"
 	append "CONFIG_${CONFIG_SECTION}_${varname}" "$value" "$LIST_SEP"
-	[ -n "$NO_CALLBACK" ] || list_cb "$varname" "$*"
+	list_cb "$varname" "$*"
 }
 
 config_unset() {
@@ -92,7 +92,7 @@ config_unset() {
 # config_get <section> <option>
 config_get() {
 	case "$3" in
-		"") eval echo "\"\${CONFIG_${1}_${2}:-\${4}}\"";;
+		"") eval echo "\${CONFIG_${1}_${2}:-\${4}}";;
 		*)  eval export ${NO_EXPORT:+-n} -- "${1}=\${CONFIG_${2}_${3}:-\${4}}";;
 	esac
 }
@@ -113,8 +113,11 @@ config_set() {
 	local section="$1"
 	local option="$2"
 	local value="$3"
+	local old_section="$CONFIG_SECTION"
 
-	export ${NO_EXPORT:+-n} "CONFIG_${section}_${option}=${value}"
+	CONFIG_SECTION="$section"
+	option "$option" "$value"
+	CONFIG_SECTION="$old_section"
 }
 
 config_foreach() {
@@ -150,110 +153,82 @@ config_list_foreach() {
 	done
 }
 
-default_prerm() {
-	local root="${IPKG_INSTROOT}"
-	local pkgname="$(basename ${1%.*})"
-	local ret=0
-
-	if [ -f "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" ]; then
-		( . "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" )
-		ret=$?
-	fi
-
-	local shell="$(which bash)"
-	for i in $(grep -s "^/etc/init.d/" "$root/usr/lib/opkg/info/${pkgname}.list"); do
-		if [ -n "$root" ]; then
-			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" disable
+insert_modules() {
+	for m in $*; do
+		if [ -f /etc/modules.d/$m ]; then
+			sed 's/^[^#]/insmod &/' /etc/modules.d/$m | ash 2>&- || :
 		else
-			if [ "$PKG_UPGRADE" != "1" ]; then
-				"$i" disable
-			fi
-			"$i" stop
+			modprobe $m
 		fi
 	done
-
-	return $ret
 }
 
-add_group_and_user() {
-	local pkgname="$1"
-	local rusers="$(sed -ne 's/^Require-User: *//p' $root/usr/lib/opkg/info/${pkgname}.control 2>/dev/null)"
-
-	if [ -n "$rusers" ]; then
-		local tuple oIFS="$IFS"
-		for tuple in $rusers; do
-			local uid gid uname gname
-
-			IFS=":"
-			set -- $tuple; uname="$1"; gname="$2"
-			IFS="="
-			set -- $uname; uname="$1"; uid="$2"
-			set -- $gname; gname="$1"; gid="$2"
-			IFS="$oIFS"
-
-			if [ -n "$gname" ] && [ -n "$gid" ]; then
-				group_exists "$gname" || group_add "$gname" "$gid"
-			elif [ -n "$gname" ]; then
-				gid="$(group_add_next "$gname")"
-			fi
-
-			if [ -n "$uname" ]; then
-				user_exists "$uname" || user_add "$uname" "$uid" "$gid"
-			fi
-
-			if [ -n "$uname" ] && [ -n "$gname" ]; then
-				group_add_user "$gname" "$uname"
-			fi
-
-			unset uid gid uname gname
-		done
-	fi
+default_prerm() {
+	local name
+	name=$(basename ${1%.*})
+	[ -f /usr/lib/opkg/info/${name}.prerm-pkg ] && . /usr/lib/opkg/info/${name}.prerm-pkg
+	for i in `cat /usr/lib/opkg/info/${name}.list | grep "^/etc/init.d/"`; do
+		$i disable
+		$i stop
+	done
 }
 
 default_postinst() {
-	local root="${IPKG_INSTROOT}"
-	local pkgname="$(basename ${1%.*})"
-	local ret=0
+	local pkgname rusers ret
+	ret=0
+	pkgname=$(basename ${1%.*})
+	rusers=$(grep "Require-User:" ${IPKG_INSTROOT}/usr/lib/opkg/info/${pkgname}.control)
+	[ -n "$rusers" ] && {
+		local user group uid gid
+		for a in $(echo $rusers | sed "s/Require-User://g"); do
+			user=""
+			group=""
+			for b in $(echo $a | sed "s/:/ /g"); do
+				local ugname ugid
 
-	add_group_and_user "${pkgname}"
+				ugname=$(echo $b | cut -d= -f1)
+				ugid=$(echo $b | cut -d= -f2)
 
-	if [ -f "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg" ]; then
-		( . "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg" )
+				[ -z "$user" ] && {
+					user=$ugname
+					uid=$ugid
+					continue
+				}
+
+				gid=$ugid
+				[ -n "$gid" ] && {
+					group_exists $ugname || group_add $ugname $gid
+				}
+
+				[ -z "$gid" ] && {
+					group_add_next $ugname
+					gid=$?
+				}
+
+				[ -z "$group" ] && {
+					user_exists $user || user_add $user "$uid" $gid
+					group=$ugname
+					continue
+				}
+
+				group_add_user $ugname $user
+			done
+		done
+	}
+
+	if [ -f ${IPKG_INSTROOT}/usr/lib/opkg/info/${pkgname}.postinst-pkg ]; then
+		( . ${IPKG_INSTROOT}/usr/lib/opkg/info/${pkgname}.postinst-pkg )
 		ret=$?
 	fi
+	[ -n "${IPKG_INSTROOT}" ] || rm -f /tmp/luci-indexcache 2>/dev/null
 
-	if [ -d "$root/rootfs-overlay" ]; then
-		cp -R $root/rootfs-overlay/. $root/
-		rm -fR $root/rootfs-overlay/
-	fi
-
-	if [ -z "$root" ] && grep -q -s "^/etc/modules.d/" "/usr/lib/opkg/info/${pkgname}.list"; then
-		kmodloader
-	fi
-
-	if [ -z "$root" ] && grep -q -s "^/etc/uci-defaults/" "/usr/lib/opkg/info/${pkgname}.list"; then
-		. /lib/functions/system.sh
-		[ -d /tmp/.uci ] || mkdir -p /tmp/.uci
-		for i in $(grep -s "^/etc/uci-defaults/" "/usr/lib/opkg/info/${pkgname}.list"); do
-			( [ -f "$i" ] && cd "$(dirname $i)" && . "$i" ) && rm -f "$i"
-		done
-		uci commit
-	fi
-
-	[ -n "$root" ] || rm -f /tmp/luci-indexcache 2>/dev/null
-
-	local shell="$(which bash)"
-	for i in $(grep -s "^/etc/init.d/" "$root/usr/lib/opkg/info/${pkgname}.list"); do
-		if [ -n "$root" ]; then
-			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" enable
-		else
-			if [ "$PKG_UPGRADE" != "1" ]; then
-				"$i" enable
-			fi
-			"$i" start
-		fi
+	[ "$PKG_UPGRADE" = "1" ] || for i in `cat ${IPKG_INSTROOT}/usr/lib/opkg/info/${pkgname}.list | grep "^/etc/init.d/"`; do
+		[ -n "${IPKG_INSTROOT}" ] && $(which bash) ${IPKG_INSTROOT}/etc/rc.common ${IPKG_INSTROOT}$i enable; \
+		[ -n "${IPKG_INSTROOT}" ] || {
+			$i enable
+			$i start
+		}
 	done
-
 	return $ret
 }
 
@@ -287,7 +262,9 @@ group_add() {
 	[ -f "${IPKG_INSTROOT}/etc/group" ] || return 1
 	[ -n "$IPKG_INSTROOT" ] || lock /var/lock/group
 	echo "${name}:x:${gid}:" >> ${IPKG_INSTROOT}/etc/group
+	rc=$?
 	[ -n "$IPKG_INSTROOT" ] || lock -u /var/lock/group
+	return $rc
 }
 
 group_exists() {
@@ -297,17 +274,14 @@ group_exists() {
 group_add_next() {
 	local gid gids
 	gid=$(grep -s "^${1}:" ${IPKG_INSTROOT}/etc/group | cut -d: -f3)
-	if [ -n "$gid" ]; then
-		echo $gid
-		return
-	fi
+	[ -n "$gid" ] && return $gid
 	gids=$(cat ${IPKG_INSTROOT}/etc/group | cut -d: -f3)
-	gid=65536
-	while [ -n "$(echo "$gids" | grep "^$gid$")" ] ; do
+	gid=100
+	while [ -n "$(echo $gids | grep $gid)" ] ; do
 	        gid=$((gid + 1))
 	done
 	group_add $1 $gid
-	echo $gid
+	return $gid
 }
 
 group_add_user() {
@@ -330,8 +304,8 @@ user_add() {
 	local rc
 	[ -z "$uid" ] && {
 		uids=$(cat ${IPKG_INSTROOT}/etc/passwd | cut -d: -f3)
-		uid=65536
-		while [ -n "$(echo "$uids" | grep "^$uid$")" ] ; do
+		uid=100
+		while [ -n "$(echo $uids | grep $uid)" ] ; do
 		        uid=$((uid + 1))
 		done
 	}
@@ -340,15 +314,13 @@ user_add() {
 	[ -n "$IPKG_INSTROOT" ] || lock /var/lock/passwd
 	echo "${name}:x:${uid}:${gid}:${desc}:${home}:${shell}" >> ${IPKG_INSTROOT}/etc/passwd
 	echo "${name}:x:0:0:99999:7:::" >> ${IPKG_INSTROOT}/etc/shadow
+	rc=$?
 	[ -n "$IPKG_INSTROOT" ] || lock -u /var/lock/passwd
+	return $rc
 }
 
 user_exists() {
 	grep -qs "^${1}:" ${IPKG_INSTROOT}/etc/passwd
-}
-
-board_name() {
-	[ -e /tmp/sysinfo/board_name ] && cat /tmp/sysinfo/board_name || echo "generic"
 }
 
 [ -z "$IPKG_INSTROOT" -a -f /lib/config/uci.sh ] && . /lib/config/uci.sh

@@ -26,65 +26,15 @@ cfg_value_get()
 		done
 }
 
-platform_check_image_target_openmesh()
+# make sure we got uboot-envtools and fw_env.config copied over to the ramfs
+# create /var/lock for the lock "fw_setenv.lock" of fw_setenv
+platform_add_ramfs_ubootenv()
 {
-	img_board_target="$1"
-
-	case "$img_board_target" in
-		A60)
-			[ "$board" = "a40" ] && return 0
-			[ "$board" = "a60" ] && return 0
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		OM2P)
-			[ "$board" = "om2p" ] && return 0
-			[ "$board" = "om2pv2" ] && return 0
-			[ "$board" = "om2pv4" ] && return 0
-			[ "$board" = "om2p-lc" ] && return 0
-			[ "$board" = "om2p-hs" ] && return 0
-			[ "$board" = "om2p-hsv2" ] && return 0
-			[ "$board" = "om2p-hsv3" ] && return 0
-			[ "$board" = "om2p-hsv4" ] && return 0
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		OM5P)
-			[ "$board" = "om5p" ] && return 0
-			[ "$board" = "om5p-an" ] && return 0
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		OM5PAC)
-			[ "$board" = "om5p-ac" ] && return 0
-			[ "$board" = "om5p-acv2" ] && return 0
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		MR1750)
-			[ "$board" = "mr1750" ] && return 0
-			[ "$board" = "mr1750v2" ] && return 0
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		MR600)
-			[ "$board" = "mr600" ] && return 0
-			[ "$board" = "mr600v2" ] && return 0
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		MR900)
-			[ "$board" = "mr900" ] && return 0
-			[ "$board" = "mr900v2" ] && return 0
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		*)
-			echo "Invalid board target ($img_board_target). Use the correct image for this platform"
-			return 1
-			;;
-	esac
+	[ -e /usr/sbin/fw_printenv ] && install_bin /usr/sbin/fw_printenv /usr/sbin/fw_setenv
+	[ -e /etc/fw_env.config ] && install_file /etc/fw_env.config
+	mkdir -p $RAM_ROOT/var/lock
 }
+append sysupgrade_pre_upgrade platform_add_ramfs_ubootenv
 
 platform_check_image_openmesh()
 {
@@ -106,9 +56,54 @@ platform_check_image_openmesh()
 			;;
 	esac
 
-	platform_check_image_target_openmesh "$img_board_target" || return 1
+	case "$img_board_target" in
+		OM2P)
+			[ "$board" = "om2p" ] && break
+			[ "$board" = "om2pv2" ] && break
+			[ "$board" = "om2p-lc" ] && break
+			[ "$board" = "om2p-hs" ] && break
+			[ "$board" = "om2p-hsv2" ] && break
+			[ "$board" = "om2p-hsv3" ] && break
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		OM5P)
+			[ "$board" = "om5p" ] && break
+			[ "$board" = "om5p-an" ] && break
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		OM5PAC)
+			[ "$board" = "om5p-ac" ] && break
+			[ "$board" = "om5p-acv2" ] && break
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		MR1750)
+			[ "$board" = "mr1750" ] && break
+			[ "$board" = "mr1750v2" ] && break
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		MR600)
+			[ "$board" = "mr600" ] && break
+			[ "$board" = "mr600v2" ] && break
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		MR900)
+			[ "$board" = "mr900" ] && break
+			[ "$board" = "mr900v2" ] && break
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		*)
+			echo "Invalid board target ($img_board_target). Use the correct image for this platform"
+			return 1
+			;;
+	esac
 
-	[ $img_num_files -lt 3 ] && {
+	[ $img_num_files -ne 3 ] && {
 		echo "Invalid number of embedded images ($img_num_files). Use the correct image for this platform"
 		return 1
 	}
@@ -175,7 +170,7 @@ platform_do_upgrade_openmesh()
 			kernel_start_addr1=0x9f1c0000
 			kernel_start_addr2=0x9f8c0000
 			;;
-		OM5P|OM5PAC|MR600|MR900|MR1750|A60)
+		OM5P|OM5PAC|MR600|MR900|MR1750)
 			block_size=$((64 * 1024))
 			total_size=7995392
 			kernel_start_addr1=0x9f0b0000
@@ -224,7 +219,6 @@ platform_do_upgrade_openmesh()
 	printf "rootfs_size %s\n" $rootfs_checksize >> $uboot_env_upgrade
 	printf "rootfs_checksum %s\n" $rootfs_md5 >> $uboot_env_upgrade
 
-	mkdir -p /var/lock
 	fw_setenv -s $uboot_env_upgrade || {
 		echo "failed to update U-Boot environment"
 		return 1

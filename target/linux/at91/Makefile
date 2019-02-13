@@ -1,4 +1,4 @@
-#
+# 
 # Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -9,16 +9,14 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=at91
 MAINTAINER:=Claudio Mignanti <c.mignanti@gmail.com>
-BOARDNAME:=Microchip (Atmel AT91)
-FEATURES:=ext4 squashfs targz usb usbgadget ubifs
-SUBTARGETS:=sama5d2 sama5d3 sama5d4 legacy
+BOARDNAME:=Atmel AT91
+FEATURES:=squashfs targz ext2 usb usbgadget ubifs
+SUBTARGETS:=legacy sama5d3
 
-KERNEL_PATCHVER:=4.9
+KERNEL_PATCHVER:=3.18
 
 include $(INCLUDE_DIR)/target.mk
 
-KERNELNAME:=zImage dtbs
-
-DEFAULT_PACKAGES += kmod-usb-ohci kmod-at91-udc kmod-usb-gadget-eth
+DEFAULT_PACKAGES += kmod-usb-ohci kmod-at91-udc kmod-usb-eth-gadget
 
 $(eval $(call BuildTarget))

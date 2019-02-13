@@ -21,7 +21,7 @@ TARGETS=$*
 }
 
 find $TARGETS -type f -a -exec file {} \; | \
-  sed -n -e 's/^\(.*\):.*ELF.*\(executable\|relocatable\|shared object\).*,.*/\1:\2/p' | \
+  sed -n -e 's/^\(.*\):.*ELF.*\(executable\|relocatable\|shared object\).*,.* stripped/\1:\2/p' | \
 (
   IFS=":"
   while read F S; do
@@ -34,7 +34,7 @@ find $TARGETS -type f -a -exec file {} \; | \
 			old_rpath="$($PATCHELF --print-rpath $F)"; new_rpath=""
 			for path in $old_rpath; do
 				case "$path" in
-					/lib/[^/]*|/usr/lib/[^/]*|\$ORIGIN/*|\$ORIGIN) new_rpath="${new_rpath:+$new_rpath:}$path" ;;
+					/lib/[^/]*|/usr/lib/[^/]*|\$ORIGIN/*) new_rpath="${new_rpath:+$new_rpath:}$path" ;;
 					*) echo "$SELF: $F: removing rpath $path" ;;
 				esac
 			done

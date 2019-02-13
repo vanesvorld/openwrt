@@ -6,15 +6,17 @@ get_magic_long_at() {
 	dd if="$1" skip=$2 bs=1 count=4 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
 }
 
+platform_machine() {
+	grep "machine" /proc/cpuinfo | sed "s/.*:[ \t]*//"
+}
+
 platform_expected_image() {
-	local machine=$(board_name)
+	local machine=$(platform_machine)
 
 	case "$machine" in
 		"Netgear WGR614 V8")	echo "chk U12H072T00_NETGEAR"; return;;
 		"Netgear WGR614 V9")	echo "chk U12H094T00_NETGEAR"; return;;
 		"Netgear WGR614 V10")	echo "chk U12H139T01_NETGEAR"; return;;
-		"Netgear WN2500RP V1")	echo "chk U12H197T00_NETGEAR"; return;;
-		"Netgear WN2500RP V2")	echo "chk U12H294T00_NETGEAR"; return;;
 		"Netgear WNDR3300")	echo "chk U12H093T00_NETGEAR"; return;;
 		"Netgear WNDR3400 V1")	echo "chk U12H155T00_NETGEAR"; return;;
 		"Netgear WNDR3400 V2")	echo "chk U12H187T00_NETGEAR"; return;;

@@ -15,8 +15,8 @@ proto_dslite_setup() {
 	local link="ds-$cfg"
 	local remoteip6
 
-	local mtu ttl peeraddr ip6addr tunlink zone weakif encaplimit
-	json_get_vars mtu ttl peeraddr ip6addr tunlink zone weakif encaplimit
+	local mtu ttl peeraddr ip6addr tunlink zone weakif
+	json_get_vars mtu ttl peeraddr ip6addr tunlink zone weakif
 
 	[ -z "$peeraddr" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
@@ -26,20 +26,16 @@ proto_dslite_setup() {
 
 	( proto_add_host_dependency "$cfg" "::" "$tunlink" )
 
-	remoteip6=$(resolveip -6 "$peeraddr")
+	remoteip6=$(resolveip -6 $peeraddr)
 	if [ -z "$remoteip6" ]; then
 		sleep 3
-		remoteip6=$(resolveip -6 "$peeraddr")
+		remoteip6=$(resolveip -6 $peeraddr)
 		if [ -z "$remoteip6" ]; then
 			proto_notify_error "$cfg" "AFTR_DNS_FAIL"
 			return
 		fi
 	fi
-
-	for ip6 in $remoteip6; do
-		peeraddr=$ip6
-		break
-	done
+	peeraddr="${remoteip6%% *}"
 
 	[ -z "$ip6addr" ] && {
 		local wanif="$tunlink"
@@ -68,9 +64,6 @@ proto_dslite_setup() {
 	json_add_string local "$ip6addr"
 	json_add_string remote "$peeraddr"
 	[ -n "$tunlink" ] && json_add_string link "$tunlink"
-	json_add_object "data"
-	  [ -n "$encaplimit" ] && json_add_string encaplimit "$encaplimit"
-	json_close_object
 	proto_close_tunnel
 
 	proto_add_data
@@ -100,7 +93,6 @@ proto_dslite_init_config() {
 	proto_config_add_string "tunlink"
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
-	proto_config_add_string "encaplimit"
 	proto_config_add_string "zone"
 	proto_config_add_string "weakif"
 }

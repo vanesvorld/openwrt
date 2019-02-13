@@ -48,7 +48,7 @@ main(int argc, char *argv[])
 
   const char *infile, *outfile;
   FILE *in, *out;
-  static uint8_t buf[4096];
+  static const uint8_t buf[4096];
   size_t elems;
 
   uint8_t properties;

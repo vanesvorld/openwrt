@@ -7,9 +7,3 @@ mconf*
 !mconf*.h
 mconf_check
 *.*.c
-qconf*
-qconf*.moc
-!qconf*.cc
-!qconf*.h
-!images*.c
-.tmp_qtcheck

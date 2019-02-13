@@ -6,9 +6,9 @@
 # that happens, so this needs to run very early during boot.
 
 do_checksumming_disable() {
-	. /lib/functions.sh
+	. /lib/ramips.sh
 
-	local board=$(board_name)
+	local board=$(ramips_board_name)
 
 	case "$board" in
 	wnce2001)

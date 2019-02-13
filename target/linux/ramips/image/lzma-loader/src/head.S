@@ -109,9 +109,6 @@ __bss_check:
 	/* Setup new "C" stack */
 	la	sp, _stack
 
-	/* reserve stack space for a0-a3 registers */
-	subu	sp, 16
-
 	/* jump to the decompressor routine */
 	la	t0, loader_main
 	jr	t0

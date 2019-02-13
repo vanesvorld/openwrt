@@ -8,18 +8,20 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rpcd
-PKG_RELEASE:=1
+PKG_VERSION:=2016-06-30
+PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=$(PROJECT_GIT)/project/rpcd.git
-PKG_SOURCE_DATE:=2018-11-28
-PKG_SOURCE_VERSION:=3aa81d0dfae167eccc26203bd0c96f3e3450f253
-PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
-PKG_MIRROR_HASH:=1befc5e1793a687e7a37b4f4d611e5f95aef4b79ad4b288c4dcb4c74d212509b
+PKG_SOURCE_URL=$(OPENWRT_GIT)/project/rpcd.git
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)
+PKG_SOURCE_VERSION:=23417e94d25570e6d62542bac46edd51e8e0243a
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
+PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
 PKG_LICENSE:=ISC
 PKG_LICENSE_FILES:=
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -50,8 +52,6 @@ endef
 define Package/rpcd/conffiles
 /etc/config/rpcd
 endef
-
-TARGET_LDFLAGS += -lcrypt
 
 define Package/rpcd/install
 	$(INSTALL_DIR) $(1)/etc/init.d

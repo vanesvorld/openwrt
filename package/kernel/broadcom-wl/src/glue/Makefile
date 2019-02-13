@@ -1,7 +1,7 @@
 #
 # Makefile for wl_glue driver
 #
-# Copyright (C) 2011 Jo-Philipp Wich <jo@mein.io>
+# Copyright (C) 2011 Jo-Philipp Wich <jow@openwrt.org>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License

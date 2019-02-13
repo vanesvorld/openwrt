@@ -1,5 +1,4 @@
 # Copyright (C) 2012 OpenWrt.org
-# Copyright (C) 2015-2016 Lantiq Beteiligungs GmbH & Co KG.
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,21 +7,18 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr9
-PKG_VERSION:=4.17.18.6
-PKG_RELEASE:=3
+PKG_VERSION:=4.11.4
+PKG_RELEASE:=1
 
-PKG_BASE_NAME:=drv_dsl_cpe_api
-PKG_SOURCE:=$(PKG_BASE_NAME)_vrx-$(PKG_VERSION).tar.gz
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BASE_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_HASH:=b4966a60653acc49254b168c6cc9c49eb36c54548e763617788aa4f252a29f21
-PKG_LICENSE:=GPL-2.0 BSD-2-Clause
-PKG_LICENSE_FILES:=LICENSE
+PKG_BASE_NAME:=drv_dsl_cpe_api_vrx
+PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/drv_dsl_cpe_api-$(PKG_VERSION)
+PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
+PKG_MD5SUM:=b6d9c1e3c5db1bfcd6e81bb2f582cadb
 
-PKG_ASLR_PIE:=0
-PKG_FIXUP:=autoreconf
+PKG_USE_MIPS16:=0
 
-PKG_MAINTAINER:=John Crispin <john@phrozen.org>
+PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -42,6 +38,8 @@ define Package/ltq-vdsl-vr9/description
 		- VRX200 Family
 endef
 
+EXTRA_CFLAGS = -fno-pic -mno-abicalls -mlong-calls -G 0
+
 MAKE_FLAGS += \
 	SHELL="$(BASH)"
 
@@ -50,18 +48,17 @@ CONFIGURE_ARGS += --enable-kernel-include="$(LINUX_DIR)/include" \
 	--with-lines-per-device="1" \
 	--with-channels-per-line="1" \
 	--enable-vrx \
-	--enable-vrx-device=vr9 \
 	--enable-ifxos \
 	--enable-ifxos-include="-I$(STAGING_DIR)/usr/include/ifxos" \
 	--enable-driver-include="-I$(STAGING_DIR)/usr/include/vdsl" \
-	--enable-add-drv-cflags="-DMODULE -DINCLUDE_DSL_ATM_PTM_INTERFACE_SUPPORT" \
+	--enable-add-drv-cflags="-DMODULE -DINCLUDE_DSL_ATM_PTM_INTERFACE_SUPPORT -DDSL_DEBUG_DISABLE" \
 	--enable-adsl-led=no \
 	--enable-adsl-mib=no \
 	--enable-dsl-ceoc=no \
+	--enable-dsl-bonding=no \
 	--enable-linux-26 \
 	--enable-kernelbuild="$(LINUX_DIR)" \
-	--enable-debug-prints=no \
-	ARCH=mips
+	KERNEL_ARCH=mips
 
 CONFIGURE_ARGS += --enable-model=full
 #CONFIGURE_ARGS += --enable-model=lite

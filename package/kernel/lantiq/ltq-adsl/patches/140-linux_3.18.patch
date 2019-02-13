@@ -1,6 +1,6 @@
 --- a/src/include/drv_dsl_cpe_os_linux.h
 +++ b/src/include/drv_dsl_cpe_os_linux.h
-@@ -214,12 +214,25 @@ static inline int dsl_mutex_lock(struct
+@@ -214,12 +214,35 @@ static inline int dsl_mutex_lock(struct 
  #define DSL_DRV_MUTEX_LOCK(id)               down_interruptible(&(id))
  #define DSL_DRV_MUTEX_UNLOCK(id)             up(&(id))
  #endif
@@ -8,11 +8,21 @@
 +static inline long
 +ugly_hack_sleep_on_timeout(wait_queue_head_t *q, long timeout)
 +{
-+	DEFINE_WAIT(wait);
++	unsigned long flags;
++	wait_queue_t wait;
 +
-+	prepare_to_wait(q, &wait, TASK_INTERRUPTIBLE);
++	init_waitqueue_entry(&wait, current);
++
++	__set_current_state(TASK_INTERRUPTIBLE);
++	spin_lock_irqsave(&q->lock, flags);
++	__add_wait_queue(q, &wait);
++	spin_unlock(&q->lock);
++
 +	timeout = schedule_timeout(timeout);
-+	finish_wait(q, &wait);
++
++	spin_lock_irq(&q->lock);
++	__remove_wait_queue(q, &wait);
++	spin_unlock_irqrestore(&q->lock, flags);
 +
 +	return timeout;
 +}

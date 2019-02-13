@@ -7,9 +7,6 @@
 		pflash = &pflash;
 		gpio0 = &gpio0;
 		gpio1 = &gpio1;
-		serial0 = &uart0;
-		serial1 = &uart1;
-		spi0 = &lsspi;
 	};
 
 	cpus {
@@ -54,11 +51,10 @@
 		#size-cells = <1>;
 		ranges;
 		compatible = "simple-bus";
-		interrupt-parent = <&periph_intc>;
 
 		periph_intc: interrupt-controller@fff8c00c {
-			compatible = "brcm,bcm6345-l1-intc";
-			reg = <0xfff8c00c 0x8>;
+			compatible = "brcm,bcm6345-periph-intc";
+			reg = <0xfffe000c 0x8>;
 
 			interrupt-controller;
 			#interrupt-cells = <1>;
@@ -69,12 +65,13 @@
 
 		ext_intc0: interrupt-controller@fff8c014 {
 			compatible = "brcm,bcm6345-ext-intc";
-			reg = <0xfff8c014 0x4>;
+			reg = <0xfffe0014 0x4>;
 
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
-			interrupts = <25>, <26>, <27>, <28>;
+			interrupt-parent = <&periph_intc>;
+			interrupts = <24>, <25>, <26>, <27>;
 		};
 
 		gpio1: gpio-controller@fff8c080 {
@@ -93,41 +90,6 @@
 
 			gpio-controller;
 			#gpio-cells = <2>;
-		};
-
-		uart0: serial@fff8c100 {
-			compatible = "brcm,bcm6345-uart";
-			reg = <0xfff8c100 0x18>;
-
-			interrupt-parent = <&periph_intc>;
-			interrupts = <2>;
-
-			/* clocks = <&periph_clk>; */
-			/* clock-names = "refclk"; */
-
-			status = "disabled";
-		};
-
-		uart1: serial@fff8c120 {
-			compatible = "brcm,bcm6345-uart";
-			reg = <0xfff8c120 0x18>;
-
-			interrupt-parent = <&periph_intc>;
-			interrupts = <3>;
-
-			/* clocks = <&periph_clk>; */
-			/* clock-names = "refclk"; */
-
-			status = "disabled";
-		};
-
-		lsspi: spi@fff8c800 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "brcm,bcm6358-spi";
-			reg = <0xfff8c800 0x70c>;
-			interrupts = <1>;
-			/* clocks = <&clkctl 9>; */
 		};
 	};
 };

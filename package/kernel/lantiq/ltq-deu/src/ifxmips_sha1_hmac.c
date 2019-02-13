@@ -47,7 +47,7 @@
 #include <linux/cryptohash.h>
 #include <crypto/internal/hash.h>
 #include <linux/types.h>
-#include <linux/scatterlist.h>
+#include <asm/scatterlist.h>
 #include <asm/byteorder.h>
 #include <linux/delay.h>
 
@@ -332,7 +332,6 @@ static struct shash_alg ifxdeu_sha1_hmac_alg = {
         .base           =       {
                 .cra_name       =       "hmac(sha1)",
                 .cra_driver_name=       "ifxdeu-sha1_hmac",
-                .cra_priority   =       400,
 		.cra_ctxsize    =	sizeof(struct sha1_hmac_ctx),
                 .cra_flags      =       CRYPTO_ALG_TYPE_DIGEST,
                 .cra_blocksize  =       SHA1_HMAC_BLOCK_SIZE,
@@ -342,11 +341,11 @@ static struct shash_alg ifxdeu_sha1_hmac_alg = {
 };
 
 
-/*! \fn int ifxdeu_init_sha1_hmac (void)
+/*! \fn int __init ifxdeu_init_sha1_hmac (void)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
  *  \brief initialize sha1 hmac driver    
 */                                 
-int ifxdeu_init_sha1_hmac (void)
+int __init ifxdeu_init_sha1_hmac (void)
 {
     int ret = -ENOSYS;
 
@@ -365,11 +364,11 @@ sha1_err:
     return ret;
 }
 
-/*! \fn void ifxdeu_fini_sha1_hmac (void)
+/*! \fn void __exit ifxdeu_fini_sha1_hmac (void)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
  *  \brief unregister sha1 hmac driver    
 */                                 
-void ifxdeu_fini_sha1_hmac (void)
+void __exit ifxdeu_fini_sha1_hmac (void)
 {
 
     crypto_unregister_shash(&ifxdeu_sha1_hmac_alg);

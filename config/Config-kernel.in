@@ -4,34 +4,18 @@
 # See /LICENSE for more information.
 #
 
-config KERNEL_BUILD_USER
-	string "Custom Kernel Build User Name"
-	default ""
-	help
-	  Sets the Kernel build user string, which for example will be returned
-	  by 'uname -a' on running systems.
-	  If not set, uses system user at build time.
-
-config KERNEL_BUILD_DOMAIN
-	string "Custom Kernel Build Domain Name"
-	default ""
-	help
-	  Sets the Kernel build domain string, which for example will be
-	  returned by 'uname -a' on running systems.
-	  If not set, uses system hostname at build time.
-
 config KERNEL_PRINTK
 	bool "Enable support for printk"
 	default y
 
 config KERNEL_CRASHLOG
 	bool "Crash logging"
-	depends on !(arm || powerpc || sparc || TARGET_uml || i386 || x86_64)
+	depends on !(arm || powerpc || sparc || TARGET_uml)
 	default y
 
 config KERNEL_SWAP
 	bool "Support for paging of anonymous memory (swap)"
-	default y if !SMALL_FLASH
+	default y
 
 config KERNEL_DEBUG_FS
 	bool "Compile the kernel with debug filesystem enabled"
@@ -42,20 +26,9 @@ config KERNEL_DEBUG_FS
 	  write to these files. Many common debugging facilities, such as
 	  ftrace, require the existence of debugfs.
 
-config KERNEL_MIPS_FPU_EMULATOR
-	bool "Compile the kernel with MIPS FPU Emulator"
-	default y if TARGET_pistachio
-	depends on (mips || mipsel || mips64 || mips64el)
-
-config KERNEL_ARM_PMU
+config KERNEL_PERF_EVENTS
 	bool
 	default n
-	depends on (arm || aarch64)
-
-config KERNEL_PERF_EVENTS
-	bool "Compile the kernel with performance events and counters"
-	default n
-	select KERNEL_ARM_PMU if (arm || aarch64)
 
 config KERNEL_PROFILING
 	bool "Compile the kernel with profiling enabled"
@@ -65,30 +38,9 @@ config KERNEL_PROFILING
 	  Enable the extended profiling support mechanisms used by profilers such
 	  as OProfile.
 
-config KERNEL_TASKSTATS
-	bool "Compile the kernel with task resource/io statistics and accounting"
-	default n
-	help
-	  Enable the collection and publishing of task/io statistics and
-	  accounting.  Enable this option to enable i/o monitoring in system
-	  monitors.
-
-if KERNEL_TASKSTATS
-
-	config KERNEL_TASK_DELAY_ACCT
-		def_bool y
-
-	config KERNEL_TASK_IO_ACCOUNTING
-		def_bool y
-
-	config KERNEL_TASK_XACCT
-		def_bool y
-
-endif
-
 config KERNEL_KALLSYMS
 	bool "Compile the kernel with symbol table information"
-	default y if !SMALL_FLASH
+	default y
 	help
 	  This will give you more information in stack traces from kernel oopses.
 
@@ -133,7 +85,7 @@ config KERNEL_DEBUG_KERNEL
 
 config KERNEL_DEBUG_INFO
 	bool "Compile the kernel with debug information"
-	default y if !SMALL_FLASH
+	default y
 	select KERNEL_DEBUG_KERNEL
 	help
 	  This will compile your kernel and modules with debug information.
@@ -151,7 +103,7 @@ config KERNEL_DEBUG_LL
 	help
 	  ARM low level debugging.
 
-config KERNEL_DYNAMIC_DEBUG
+config KERNEL_DYNAMIC_DEBUG 
 	bool "Compile the kernel with dynamic printk"
 	select KERNEL_DEBUG_FS
 	default n
@@ -196,6 +148,10 @@ config KERNEL_AIO
 	bool "Compile the kernel with asynchronous IO support"
 	default n
 
+config KERNEL_DIRECT_IO
+	bool "Compile the kernel with direct IO support"
+	default n
+
 config KERNEL_FHANDLE
 	bool "Compile the kernel with support for fhandle syscalls"
 	default n
@@ -212,21 +168,13 @@ config KERNEL_MAGIC_SYSRQ
 	bool "Compile the kernel with SysRq support"
 	default y
 
-config KERNEL_DEBUG_PINCTRL
-	bool "Compile the kernel with pinctrl debugging"
-	select KERNEL_DEBUG_KERNEL
-
-config KERNEL_DEBUG_GPIO
-	bool "Compile the kernel with gpio debugging"
-	select KERNEL_DEBUG_KERNEL
-
 config KERNEL_COREDUMP
 	bool
 
 config KERNEL_ELF_CORE
 	bool "Enable process core dump support"
 	select KERNEL_COREDUMP
-	default y if !SMALL_FLASH
+	default y
 
 config KERNEL_PROVE_LOCKING
 	bool "Enable kernel lock checking"
@@ -257,16 +205,6 @@ config KERNEL_RELAY
 config KERNEL_KEXEC
 	bool "Enable kexec support"
 
-config KERNEL_PROC_VMCORE
-	bool
-
-config KERNEL_CRASH_DUMP
-	depends on i386 || x86_64 || arm || armeb
-	select KERNEL_KEXEC
-	select KERNEL_PROC_VMCORE
-	bool "Enable support for kexec crashdump"
-	default y
-
 config USE_RFKILL
 	bool "Enable rfkill support"
 	default RFKILL_SUPPORT
@@ -280,7 +218,7 @@ config KERNEL_DEVTMPFS
 	default n
 	help
 	  devtmpfs is a simple, kernel-managed /dev filesystem. The kernel creates
-	  devices nodes for all registered devices to simplify boot, but leaves more
+	  devices nodes for all registered devices ti simplify boot, but leaves more
 	  complex tasks to userspace (e.g. udev).
 
 if KERNEL_DEVTMPFS
@@ -290,25 +228,6 @@ if KERNEL_DEVTMPFS
 		default n
 
 endif
-
-config KERNEL_KEYS
-    bool "Enable kernel access key retention support"
-    default n
-
-config KERNEL_PERSISTENT_KEYRINGS
-    bool "Enable kernel persistent keyrings"
-    depends on KERNEL_KEYS
-    default n
-
-config KERNEL_BIG_KEYS
-    bool "Enable large payload keys on kernel keyrings"
-    depends on KERNEL_KEYS
-    default n
-
-config KERNEL_ENCRYPTED_KEYS
-    tristate "Enable keys with encrypted payloads on kernel keyrings"
-    depends on KERNEL_KEYS
-    default n
 
 #
 # CGROUP support symbols
@@ -346,13 +265,6 @@ if KERNEL_CGROUPS
 		  Provides a cgroup implementing whitelists for devices which
 		  a process in the cgroup can mknod or open.
 
-	config KERNEL_CGROUP_PIDS
-		bool "PIDs cgroup subsystem"
-		default y
-		help
-		  Provides enforcement of process number limits in the scope of a
-		  cgroup.
-
 	config KERNEL_CPUSETS
 		bool "Cpuset support"
 		default n
@@ -388,7 +300,7 @@ if KERNEL_CGROUPS
 	config KERNEL_MEMCG
 		bool "Memory Resource Controller for Control Groups"
 		default n
-		depends on KERNEL_RESOURCE_COUNTERS || !LINUX_3_18
+		depends on KERNEL_RESOURCE_COUNTERS
 		help
 		  Provides a memory resource controller that manages both anonymous
 		  memory and page cache. (See Documentation/cgroups/memory.txt)
@@ -632,204 +544,3 @@ config KERNEL_SECCOMP
 		default n
 		help
 		  Build kernel with support for seccomp.
-
-#
-# IPv4 configuration
-#
-
-config KERNEL_IP_MROUTE
-	bool "Enable IPv4 multicast routing"
-	default y
-	help
-	  Multicast routing requires a multicast routing daemon in
-	  addition to kernel support.
-
-#
-# IPv6 configuration
-#
-
-config KERNEL_IPV6
-	def_bool IPV6
-
-if KERNEL_IPV6
-
-	config KERNEL_IPV6_MULTIPLE_TABLES
-		def_bool y
-
-	config KERNEL_IPV6_SUBTREES
-		def_bool y
-
-	config KERNEL_IPV6_MROUTE
-		bool "Enable IPv6 multicast routing"
-		default y
-		help
-		  Multicast routing requires a multicast routing daemon in
-		  addition to kernel support.
-
-	config KERNEL_IPV6_PIMSM_V2
-		def_bool n
-
-endif
-
-#
-# NFS related symbols
-#
-config KERNEL_IP_PNP
-	bool "Compile the kernel with rootfs on NFS"
-	help
-	   If you want to make your kernel boot off a NFS server as root
-	   filesystem, select Y here.
-
-if KERNEL_IP_PNP
-
-	config KERNEL_IP_PNP_DHCP
-		def_bool y
-
-	config KERNEL_IP_PNP_BOOTP
-		def_bool n
-
-	config KERNEL_IP_PNP_RARP
-		def_bool n
-
-	config KERNEL_NFS_FS
-		def_bool y
-
-	config KERNEL_NFS_V2
-		def_bool y
-
-	config KERNEL_NFS_V3
-		def_bool y
-
-	config KERNEL_ROOT_NFS
-		def_bool y
-
-endif
-
-menu "Filesystem ACL and attr support options"
-	config USE_FS_ACL_ATTR
-		bool "Use filesystem ACL and attr support by default"
-		default n
-		help
-		  Make using ACLs (e.g. POSIX ACL, NFSv4 ACL) the default
-		  for kernel and packages, except tmpfs, flash filesystems,
-		  and old NFS.  Also enable userspace extended attribute support
-		  by default.  (OpenWrt already has an expection it will be
-		  present in the kernel).
-
-	config KERNEL_FS_POSIX_ACL
-		bool "Enable POSIX ACL support"
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_BTRFS_FS_POSIX_ACL
-		bool "Enable POSIX ACL for BtrFS Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_EXT4_FS_POSIX_ACL
-		bool "Enable POSIX ACL for Ext4 Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_F2FS_FS_POSIX_ACL
-		bool "Enable POSIX ACL for F2FS Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default n
-
-	config KERNEL_JFFS2_FS_POSIX_ACL
-		bool "Enable POSIX ACL for JFFS2 Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default n
-
-	config KERNEL_TMPFS_POSIX_ACL
-		bool "Enable POSIX ACL for TMPFS Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default n
-
-	config KERNEL_CIFS_ACL
-		bool "Enable CIFS ACLs"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_HFS_FS_POSIX_ACL
-		bool "Enable POSIX ACL for HFS Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_HFSPLUG_FS_POSIX_ACL
-		bool "Enable POSIX ACL for HFS+ Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_NFS_ACL_SUPPORT
-		bool "Enable ACLs for NFS"
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_NFS_V3_ACL_SUPPORT
-		bool "Enable ACLs for NFSv3"
-		default n
-
-	config KERNEL_NFSD_V2_ACL_SUPPORT
-		bool "Enable ACLs for NFSDv2"
-		default n
-
-	config KERNEL_NFSD_V3_ACL_SUPPORT
-		bool "Enable ACLs for NFSDv3"
-		default n
-
-	config KERNEL_REISER_FS_POSIX_ACL
-		bool "Enable POSIX ACLs for ReiserFS"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_XFS_POSIX_ACL
-		bool "Enable POSIX ACLs for XFS"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_JFS_POSIX_ACL
-		bool "Enable POSIX ACLs for JFS"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-endmenu
-
-config KERNEL_DEVMEM
-	bool "/dev/mem virtual device support"
-	help
-	  Say Y here if you want to support the /dev/mem device.
-	  The /dev/mem device is used to access areas of physical
-	  memory.
-
-config KERNEL_DEVKMEM
-	bool "/dev/kmem virtual device support"
-	help
-	  Say Y here if you want to support the /dev/kmem device. The
-	  /dev/kmem device is rarely used, but can be used for certain
-	  kind of kernel debugging operations.
-
-config KERNEL_SQUASHFS_FRAGMENT_CACHE_SIZE
-	int "Number of squashfs fragments cached"
-	default 2 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
-	default 3
-
-#
-# compile optimiziation setting
-#
-choice
-	prompt "Compiler optimization level"
-	default KERNEL_CC_OPTIMIZE_FOR_SIZE if SMALL_FLASH
-
-config KERNEL_CC_OPTIMIZE_FOR_PERFORMANCE
-	bool "Optimize for performance"
-	help
-	  This is the default optimization level for the kernel, building
-	  with the "-O2" compiler flag for best performance and most
-	  helpful compile-time warnings.
-
-config KERNEL_CC_OPTIMIZE_FOR_SIZE
-	bool "Optimize for size"
-	help
-	  Enabling this option will pass "-Os" instead of "-O2" to
-	  your compiler resulting in a smaller kernel.
-
-endchoice

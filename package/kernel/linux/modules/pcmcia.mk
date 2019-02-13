@@ -13,7 +13,6 @@ define KernelPackage/pcmcia-core
   DEPENDS:=@PCMCIA_SUPPORT
   KCONFIG:= \
 	CONFIG_PCMCIA \
-	CONFIG_PCMCIA_LOAD_CIS=y \
 	CONFIG_CARDBUS \
 	CONFIG_PCCARD \
 	PCMCIA_DEBUG=n
@@ -29,19 +28,13 @@ endef
 
 $(eval $(call KernelPackage,pcmcia-core))
 
-
-define AddDepends/pcmcia
-  SUBMENU:=$(PCMCIA_MENU)
-  DEPENDS+=kmod-pcmcia-core $(1)
-endef
-
-
 define KernelPackage/pcmcia-rsrc
+  SUBMENU:=$(PCMCIA_MENU)
   TITLE:=PCMCIA resource support
+  DEPENDS:=kmod-pcmcia-core
   KCONFIG:=CONFIG_PCCARD_NONSTATIC=y
   FILES:=$(LINUX_DIR)/drivers/pcmcia/pcmcia_rsrc.ko
   AUTOLOAD:=$(call AutoLoad,26,pcmcia_rsrc)
-  $(call AddDepends/pcmcia)
 endef
 
 define KernelPackage/pcmcia-rsrc/description
@@ -52,26 +45,26 @@ $(eval $(call KernelPackage,pcmcia-rsrc))
 
 
 define KernelPackage/pcmcia-yenta
+  SUBMENU:=$(PCMCIA_MENU)
   TITLE:=yenta socket driver
+  DEPENDS:=kmod-pcmcia-rsrc
   KCONFIG:=CONFIG_YENTA
   FILES:=$(LINUX_DIR)/drivers/pcmcia/yenta_socket.ko
-  AUTOLOAD:=$(call AutoLoad,41,yenta_socket)
-  DEPENDS:=+kmod-pcmcia-rsrc
-  $(call AddDepends/pcmcia)
+  AUTOLOAD:=$(call AutoLoad,41,pcmcia_rsrc yenta_socket)
 endef
 
 $(eval $(call KernelPackage,pcmcia-yenta))
 
 
 define KernelPackage/pcmcia-serial
+  SUBMENU:=$(PCMCIA_MENU)
   TITLE:=Serial devices support
+  DEPENDS:=kmod-pcmcia-core +kmod-serial-8250
   KCONFIG:= \
 	CONFIG_PCMCIA_SERIAL_CS \
 	CONFIG_SERIAL_8250_CS
-  FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/serial_cs.ko
+    FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/serial_cs.ko
   AUTOLOAD:=$(call AutoLoad,45,serial_cs)
-  DEPENDS:=+kmod-serial-8250
-  $(call AddDepends/pcmcia)
 endef
 
 define KernelPackage/pcmcia-serial/description
@@ -79,35 +72,3 @@ define KernelPackage/pcmcia-serial/description
 endef
 
 $(eval $(call KernelPackage,pcmcia-serial))
-
-
-define KernelPackage/pcmcia-pd6729
-  TITLE:=Cirrus PD6729 compatible bridge support
-  KCONFIG:=CONFIG_PD6729
-  FILES:=$(LINUX_DIR)/drivers/pcmcia/pd6729.ko
-  AUTOLOAD:=$(call AutoLoad,41,pd6729)
-  DEPENDS:=+kmod-pcmcia-rsrc
-  $(call AddDepends/pcmcia)
-endef
-
-define KernelPackage/pcmcia-pd6729/description
- Kernel support for the Cirrus PD6729 PCI-to-PCMCIA bridge
-endef
-
-$(eval $(call KernelPackage,pcmcia-pd6729))
-
-
-define KernelPackage/pcmcia-nozomi
-  TITLE:=Option Fusion+ card
-  KCONFIG:=CONFIG_NOZOMI
-  FILES:=$(LINUX_DIR)/drivers/tty/nozomi.ko
-  AUTOLOAD:=$(call AutoLoad,60,nozomi)
-  DEPENDS:=+kmod-pcmcia-rsrc
-  $(call AddDepends/pcmcia)
-endef
-
-define KernelPackage/pcmcia-nozomi/description
- Kernel support for Option Fusion+ card
-endef
-
-$(eval $(call KernelPackage,pcmcia-nozomi))

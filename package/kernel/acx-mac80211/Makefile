@@ -9,13 +9,17 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=acx-mac80211
+PKG_REV:=v20130127
+PKG_VERSION:=20130909
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=http://git.code.sf.net/p/acx100/acx-mac80211
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=git://acx100.git.sourceforge.net/gitroot/acx100/acx-mac80211
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2014-02-16
-PKG_SOURCE_VERSION:=b6fc31491020cb01d2cd1acc170cfa03ced7e726
-PKG_MIRROR_HASH:=58590245715f0e5fb4b57aab6d91071dfb6a97d3273f5aee0b97b1edee030ed0
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=$(PKG_REV)
+# PKG_MIRROR_MD5SUM:=
+PKG_BUILD_DEPENDS:=mac80211
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_MAC80211_DEBUGFS \
@@ -26,9 +30,9 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/acx-mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=ACX1xx mac80211 driver
-  DEPENDS:=@(PCI_SUPPORT||TARGET_ar7) @mipsel +kmod-mac80211
+  DEPENDS:=@(PCI_SUPPORT||TARGET_ar7) @!TARGET_cobalt @mipsel +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/acx-mac80211.ko
-  AUTOLOAD:=$(call AutoProbe,acx-mac80211)
+  AUTOLOAD:=$(call AutoLoad,50,mac80211 acx-mac80211)
   MAINTAINER:=Florian Fainelli <florian@openwrt.org>
   MENU:=1
 endef
@@ -115,55 +119,55 @@ endef
 define Download/tiacx100
 	FILE:=tiacx100
 	URL:=http://acx100.erley.org/fw/acx100_1.9.8.b/
-	HASH:=4f05913c940c2455b267545b12d93ad81fa5eebb0cbee22a2c7588c50525b4f0
+	MD5SUM:=24a54fd30f7658fcbffc825b0dd7aa5b
 endef
 
 define Download/tiacx100r0d
 	FILE:=tiacx100r0D
 	URL:=http://acx100.erley.org/fw/acx100_1.9.8.b/
-	HASH:=6a4a7fbb24a328a88261bc2a507b2a0bf63c91e831e3f1a8caa4f6599b2215e6
+	MD5SUM:=1c7413e7b0be4ef7d1e424a132e17fab
 endef
 
 define Download/tiacx100r11
 	FILE:=tiacx100r11
 	URL:=http://acx100.erley.org/fw/acx100_1.9.8.b/
-	HASH:=e005a93a0b463e01edba2b79038b54c29a7932efee61c851a2ac644b8a4e5dd4
+	MD5SUM:=a150750ad33c512edc4afee5270b37cb
 endef
 
 define Download/tiacx100r15
 	FILE:=tiacx100r15
 	URL:=http://acx100.erley.org/fw/acx100_1.9.8.b/
-	HASH:=c6f40bead5ef45720e2d72bbe4d998367c2c7857eb7716234aedeb2ad98bcdde
+	MD5SUM:=c99d01d4fcf0d6cc00441aff60690be4
 endef
 
 define Download/tiacx111c16
 	FILE:=tiacx111c16
 	URL:=http://acx100.erley.org/fw/acx111_2.3.1.31/
-	HASH:=cc6108d577ebc55b924ff6bab44eeee3456d284c63819277cb5460338b2f1bd7
+	MD5SUM:=7026826460376f6b174f9225bd7781b9
 endef
 
 define Download/tiacx111c16_1
 	FILE:=tiacx111c16_1.2.1_34
 	URL:=http://sites.google.com/site/atorkhov/files/
-	HASH:=672ed9d02565ab44da450c52f0ced3be99a3a3901f73454455da8e1f98ada220
+	MD5SUM:=fcd07de4b25e1d2aaf3b78b27c5b7ee9
 endef
 
 define Download/tiacx111c17
 	FILE:=tiacx111c17
 	URL:=http://acx100.erley.org/fw/acx111_2.3.1.31/
-	HASH:=2bb900a5886dbea2d3504623d9f3ac8abbb2e9fdfcf0fe233e77951dff748a40
+	MD5SUM:=95552544ca6d2b4e8c6aeb80b8ae7fdf
 endef
 
 define Download/tiacx111c19
 	FILE:=tiacx111c19
 	URL:=http://acx100.erley.org/fw/acx111_2.3.1.31/
-	HASH:=383d86a8cfddf92400d661b4e43a9b855350fa656edd4f75b4aff7fab2d00e90
+	MD5SUM:=a1fa9681e297b4e36e257090fc12265a
 endef
 
 define Download/tiacx111usbc1b
 	FILE:=tiacx111usbc1B
 	URL:=http://acx100.erley.org/fw/acx111_2.4.0.70-USB/
-	HASH:=f3c9e574de7073014ab6eef9a0f6412c53ae521b67723360af753c41401ed4d5
+	MD5SUM:=c4edecd912b2417779d0b65e3a7dc86d
 endef
 
 PKG_EXTRA_KCONFIG:= \
@@ -182,10 +186,11 @@ PKG_EXTRA_CFLAGS:= \
 
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
-		$(KERNEL_MAKE_FLAGS) \
+		ARCH="$(LINUX_KARCH)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		$(PKG_EXTRA_KCONFIG) \
-		EXTRA_CFLAGS="$(PKG_EXTRA_CFLAGS) -DCONFIG_ACX_MAC80211_VERSION=\"KERNEL_VERSION(4,2,0)\"" \
+		EXTRA_CFLAGS="$(PKG_EXTRA_CFLAGS) -DCONFIG_ACX_MAC80211_VERSION=\"KERNEL_VERSION(3,14,0)\"" \
 		LINUXINCLUDE="-I$(STAGING_DIR)/usr/include/mac80211-backport/uapi -I$(STAGING_DIR)/usr/include/mac80211-backport \
 			-I$(STAGING_DIR)/usr/include/mac80211/uapi -I$(STAGING_DIR)/usr/include/mac80211 \
 			-I$(LINUX_DIR)/include -I$(LINUX_DIR)/include/$(LINUX_UAPI_DIR) \

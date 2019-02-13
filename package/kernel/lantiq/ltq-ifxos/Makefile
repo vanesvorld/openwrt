@@ -7,17 +7,14 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=lib_ifxos
-PKG_VERSION:=1.5.19
-PKG_RELEASE:=4
+PKG_VERSION:=1.5.14
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=https://github.com/xdarklight/$(PKG_NAME)/archive/v$(PKG_VERSION)
-PKG_HASH:=ed7fe39311d7a4a13d23ed0ae2445c0d825b472b5a98da9b72bcaabcf5ed2d5f
-PKG_MAINTAINER:=John Crispin <john@phrozen.org>
-PKG_LICENSE:=GPL-2.0 BSD-2-Clause
-PKG_LICENSE_FILES:=LICENSE
+PKG_RELEASE:=3
+PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
+PKG_MD5SUM:=bc107f9d8ff6bed4c2760a2817bbb029
+PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
-PKG_ASLR_PIE:=0
+PKG_USE_MIPS16:=0
 PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
@@ -38,7 +35,7 @@ CONFIGURE_ARGS += \
 	--enable-linux-26 \
 	--enable-kernelbuild="$(LINUX_DIR)" \
 	--enable-kernelincl="$(LINUX_DIR)/include" \
-	--with-kernel-module
+	--enable-add_drv_cflags="-fno-pic -mno-abicalls -mlong-calls -G 0"
 
 ifdef CONFIG_TARGET_lantiq
   define Build/InstallDev

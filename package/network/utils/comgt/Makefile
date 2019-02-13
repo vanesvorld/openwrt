@@ -9,33 +9,30 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=comgt
 PKG_VERSION:=0.32
-PKG_RELEASE:=32
+PKG_RELEASE:=25
 
 PKG_SOURCE:=$(PKG_NAME).$(PKG_VERSION).tgz
 PKG_SOURCE_URL:=@SF/comgt
-PKG_HASH:=0cedb2a5aa608510da66a99aab74df3db363df495032e57e791a2ff55f1d7913
+PKG_MD5SUM:=db2452680c3d953631299e331daf49ef
 
-PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=GPL-2.0+
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME).$(PKG_VERSION)
 PKG_CHECK_FORMAT_SECURITY:=0
 
-PKG_FLAGS:=nonshared
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/comgt/Default
-  SECTION:=net
-  CATEGORY:=Network
-  SUBMENU:=WWAN
+  SECTION:=utils
+  CATEGORY:=Utilities
 endef
 
 define Package/comgt
 $(call Package/comgt/Default)
   TITLE:=Option/Vodafone 3G/GPRS control tool
   DEPENDS:=+chat
-  URL:=http://manpages.ubuntu.com/manpages/trusty/man1/comgt.1.html
+  URL:=http://www.pharscape.org/comgt.html
 endef
 
 define Package/comgt-directip
@@ -80,7 +77,7 @@ define Package/comgt/install
 	$(INSTALL_DATA) ./files/getcnum.gcom $(1)/etc/gcom/getcnum.gcom
 	$(INSTALL_DATA) ./files/getimsi.gcom $(1)/etc/gcom/getimsi.gcom
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/tty
-	$(INSTALL_CONF) ./files/3g.usb $(1)/etc/hotplug.d/tty/30-3g
+	$(INSTALL_DATA) ./files/3g.usb $(1)/etc/hotplug.d/tty/30-3g
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/3g.sh $(1)/lib/netifd/proto/3g.sh
 endef

@@ -8,16 +8,16 @@ include $(TOPDIR)/rules.mk
 
 BOARD:=malta
 BOARDNAME:=MIPS Malta CoreLV board (qemu)
-CPU_TYPE:=24kc
-SUBTARGETS:=le be le64 be64
+SUBTARGETS:=le be
 INITRAMFS_EXTRA_FILES:=
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
-FEATURES:=ramdisk
 
-KERNEL_PATCHVER:=4.14
+KERNEL_PATCHVER:=3.18
+
+DEVICE_TYPE:=developerboard
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += wpad-basic kmod-mac80211-hwsim kmod-pcnet32
+DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim kmod-pcnet32
 
 $(eval $(call BuildTarget))

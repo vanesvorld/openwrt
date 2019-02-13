@@ -17,7 +17,6 @@
 #include <linux/netdevice.h>
 #include <linux/phy.h>
 #include <net/dsa.h>
-#include <linux/version.h>
 
 #define REG_BASE		0x10
 #define REG_PHY(p)		(REG_BASE + (p))
@@ -27,11 +26,10 @@
 
 static int reg_read(struct dsa_switch *ds, int addr, int reg)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0)
-	struct mii_bus *bus = dsa_host_dev_to_mii_bus(ds->master_dev);
-	return mdiobus_read(bus, addr, reg);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
+	return mdiobus_read(ds->master_mii_bus, addr, reg);
 #else
-	struct mii_bus *bus = dsa_host_dev_to_mii_bus(ds->dev);
+	struct mii_bus *bus = dsa_host_dev_to_mii_bus(ds->master_dev);
 	return mdiobus_read(bus, addr, reg);
 #endif
 }
@@ -49,21 +47,13 @@ static int reg_read(struct dsa_switch *ds, int addr, int reg)
 
 static int reg_write(struct dsa_switch *ds, int addr, int reg, u16 val)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
+	return mdiobus_write(ds->master_mii_bus, addr, reg, val);
+#else
 	struct mii_bus *bus = dsa_host_dev_to_mii_bus(ds->master_dev);
 	return mdiobus_write(bus, addr, reg, val);
-#else
-	struct mii_bus *bus = dsa_host_dev_to_mii_bus(ds->dev);
-	return mdiobus_write(bus, addr, reg, val);
 #endif
 }
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0)
-static enum dsa_tag_protocol mv88e6063_get_tag_protocol(struct dsa_switch *ds)
-{
-	return DSA_TAG_PROTO_TRAILER;
-}
-#endif
 
 #define REG_WRITE(addr, reg, val)				\
 	({							\
@@ -74,19 +64,15 @@ static enum dsa_tag_protocol mv88e6063_get_tag_protocol(struct dsa_switch *ds)
 			return __ret;				\
 	})
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0)
-static char *mv88e6063_drv_probe(struct device *host_dev, int sw_addr)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
+static char *mv88e6063_probe(struct mii_bus *bus, int sw_addr)
+{
 #else
-static const char *mv88e6063_drv_probe(struct device *dsa_dev,
-				       struct device *host_dev, int sw_addr,
-				       void **_priv)
-#endif
+static char *mv88e6063_probe(struct device *host_dev, int sw_addr)
 {
 	struct mii_bus *bus = dsa_host_dev_to_mii_bus(host_dev);
+#endif
 	int ret;
-
-	if (!bus)
-		return NULL;
 
 	ret = mdiobus_read(bus, REG_PORT(0), 0x03);
 	if (ret >= 0) {
@@ -177,16 +163,8 @@ static int mv88e6063_setup_port(struct dsa_switch *ds, int p)
 	REG_WRITE(addr, 0x06,
 			((p & 0xf) << 12) |
 			 (dsa_is_cpu_port(ds, p) ?
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0)
 				ds->phys_port_mask :
-#else
-				ds->enabled_port_mask :
-#endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
 				(1 << ds->dst->cpu_port)));
-#else
-				(1 << ds->dst->cpu_dp->index)));
-#endif
 
 	/*
 	 * Port Association Vector: when learning source addresses
@@ -262,46 +240,72 @@ mv88e6063_phy_write(struct dsa_switch *ds, int port, int regnum, u16 val)
 	return reg_write(ds, addr, regnum, val);
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0)
-static struct dsa_switch_driver mv88e6063_switch_ops = {
-#else
-static struct dsa_switch_ops mv88e6063_switch_ops = {
-#endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
+static void mv88e6063_poll_link(struct dsa_switch *ds)
+{
+	int i;
+
+	for (i = 0; i < DSA_MAX_PORTS; i++) {
+		struct net_device *dev;
+		int uninitialized_var(port_status);
+		int link;
+		int speed;
+		int duplex;
+		int fc;
+
+		dev = ds->ports[i];
+		if (dev == NULL)
+			continue;
+
+		link = 0;
+		if (dev->flags & IFF_UP) {
+			port_status = reg_read(ds, REG_PORT(i), 0x00);
+			if (port_status < 0)
+				continue;
+
+			link = !!(port_status & 0x1000);
+		}
+
+		if (!link) {
+			if (netif_carrier_ok(dev)) {
+				printk(KERN_INFO "%s: link down\n", dev->name);
+				netif_carrier_off(dev);
+			}
+			continue;
+		}
+
+		speed = (port_status & 0x0100) ? 100 : 10;
+		duplex = (port_status & 0x0200) ? 1 : 0;
+		fc = ((port_status & 0xc000) == 0xc000) ? 1 : 0;
+
+		if (!netif_carrier_ok(dev)) {
+			printk(KERN_INFO "%s: link up, %d Mb/s, %s duplex, "
+					 "flow control %sabled\n", dev->name,
+					 speed, duplex ? "full" : "half",
+					 fc ? "en" : "dis");
+			netif_carrier_on(dev);
+		}
+	}
+}
+
+static struct dsa_switch_driver mv88e6063_switch_driver = {
 	.tag_protocol	= htons(ETH_P_TRAILER),
-#else
-	.get_tag_protocol = mv88e6063_get_tag_protocol,
-#endif
-	.probe		= mv88e6063_drv_probe,
+	.probe		= mv88e6063_probe,
 	.setup		= mv88e6063_setup,
 	.set_addr	= mv88e6063_set_addr,
 	.phy_read	= mv88e6063_phy_read,
 	.phy_write	= mv88e6063_phy_write,
+	.poll_link	= mv88e6063_poll_link,
 };
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(4,13,0)
-static struct dsa_switch_driver mv88e6063_switch_drv = {
-	.ops = &mv88e6063_switch_ops,
-};
-#endif
 
 static int __init mv88e6063_init(void)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
-	register_switch_driver(&mv88e6063_switch_ops);
-#else
-	register_switch_driver(&mv88e6063_switch_drv);
-#endif
+	register_switch_driver(&mv88e6063_switch_driver);
 	return 0;
 }
 module_init(mv88e6063_init);
 
 static void __exit mv88e6063_cleanup(void)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
-	unregister_switch_driver(&mv88e6063_switch_ops);
-#else
-	unregister_switch_driver(&mv88e6063_switch_drv);
-#endif
+	unregister_switch_driver(&mv88e6063_switch_driver);
 }
 module_exit(mv88e6063_cleanup);

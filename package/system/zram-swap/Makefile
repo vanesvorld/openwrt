@@ -1,4 +1,4 @@
-#
+# 
 # Copyright (C) 2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zram-swap
-PKG_VERSION:=1.1
+PKG_VERSION:=1
 PKG_RELEASE:=2
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)

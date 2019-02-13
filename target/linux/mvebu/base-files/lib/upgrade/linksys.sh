@@ -55,7 +55,7 @@ platform_do_upgrade_linksys() {
 
 		nand_upgrade_tar "$1"
 	}
-	[ "$magic_long" = "27051956" -o "$magic_long" = "0000a0e1" ] && {
+	[ "$magic_long" = "27051956" ] && {
 		# check firmwares' rootfs types
 		local target_mtd=$(find_mtd_part $part_label)
 		local oldroot="$(linksys_get_root_magic $target_mtd)"
@@ -73,7 +73,14 @@ platform_do_upgrade_linksys() {
 	}
 }
 
-platform_copy_config_linksys() {
-	cp -f /tmp/sysupgrade.tgz /tmp/syscfg/sysupgrade.tgz
-	sync
+linksys_preupgrade() {
+	export RAMFS_COPY_BIN="${RAMFS_COPY_BIN} /usr/sbin/fw_printenv /usr/sbin/fw_setenv"
+	export RAMFS_COPY_BIN="${RAMFS_COPY_BIN} /bin/mkdir /bin/touch"
+	export RAMFS_COPY_DATA="${RAMFS_COPY_DATA} /etc/fw_env.config /var/lock/fw_printenv.lock"
+
+	[ -f /tmp/sysupgrade.tgz ] && {
+		cp /tmp/sysupgrade.tgz /tmp/syscfg/sysupgrade.tgz
+	}
 }
+
+append sysupgrade_pre_upgrade linksys_preupgrade

@@ -8,16 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mwlwifi
-PKG_RELEASE=1
+PKG_VERSION:=10.3.2.0-20161013
+PKG_RELEASE=2
 
 PKG_LICENSE:=ISC
 PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/kaloz/mwlwifi
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2018-12-18
-PKG_SOURCE_VERSION:=c2c8244d8fea5d59762cb14438ded00bf6d5965c
-PKG_MIRROR_HASH:=60fc25814349fccfbce7981a7d299665334829a70bf2310b3b87064cec5c6388
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=41db55d3872cad94763a5fa0c5f028fa1ab66f58
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.xz
 
 PKG_MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 PKG_BUILD_PARALLEL:=1
@@ -27,10 +28,10 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/mwlwifi
   SUBMENU:=Wireless Drivers
-  TITLE:=Marvell 88W8864/88W8897/88W8964/88W8997 wireless driver
-  DEPENDS:=+kmod-mac80211 +@DRIVER_11N_SUPPORT +@DRIVER_11AC_SUPPORT +@DRIVER_11W_SUPPORT @PCI_SUPPORT @TARGET_mvebu
+  TITLE:=Marvell 88W8864 wireless driver
+  DEPENDS:=+kmod-mac80211 +@DRIVER_11N_SUPPORT @PCI_SUPPORT @TARGET_mvebu
   FILES:=$(PKG_BUILD_DIR)/mwlwifi.ko
-  AUTOLOAD:=$(call AutoLoad,50,mwlwifi)
+  AUTOLOAD:=$(call AutoLoad,50,mac80211 mwlwifi)
 endef
 
 NOSTDINC_FLAGS = \
@@ -43,60 +44,20 @@ NOSTDINC_FLAGS = \
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C "$(LINUX_DIR)" \
-		$(KERNEL_MAKE_FLAGS) \
+		ARCH="$(LINUX_KARCH)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		NOSTDINC_FLAGS="$(NOSTDINC_FLAGS)" \
 		modules
 endef
 
-define Package/mwlwifi-firmware-default
-  SECTION:=firmware
-  CATEGORY:=Firmware
-  TITLE:=Marvell $(1) firmware
-  DEPENDS:=+kmod-mwlwifi @TARGET_mvebu
-endef
-
-define Package/mwlwifi-firmware/install
+define KernelPackage/mwlwifi/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DIR) $(1)/lib/firmware/mwlwifi
-	$(CP) $(PKG_BUILD_DIR)/bin/firmware/$(2) $(1)/lib/firmware/mwlwifi/
-	$(CP) $(PKG_BUILD_DIR)/bin/firmware/Marvell_license.txt $(1)/lib/firmware/mwlwifi/$(2).Marvell_license.txt
-endef
-
-define Package/mwlwifi-firmware-88w8864
-$(call Package/mwlwifi-firmware-default,88W8864)
-endef
-
-define Package/mwlwifi-firmware-88w8864/install
-	$(call Package/mwlwifi-firmware/install,$(1),88W8864.bin)
-endef
-
-define Package/mwlwifi-firmware-88w8897
-$(call Package/mwlwifi-firmware-default,88W8897)
-endef
-
-define Package/mwlwifi-firmware-88w8897/install
-	$(call Package/mwlwifi-firmware/install,$(1),88W8897.bin)
-endef
-
-define Package/mwlwifi-firmware-88w8964
-$(call Package/mwlwifi-firmware-default,88W8964)
-endef
-
-define Package/mwlwifi-firmware-88w8964/install
-	$(call Package/mwlwifi-firmware/install,$(1),88W8964.bin)
-endef
-
-define Package/mwlwifi-firmware-88w8997
-$(call Package/mwlwifi-firmware-default,88W8997)
-endef
-
-define Package/mwlwifi-firmware-88w8997/install
-	$(call Package/mwlwifi-firmware/install,$(1),88W8997.bin)
+	$(CP) $(PKG_BUILD_DIR)/bin/firmware/88W8864.bin $(1)/lib/firmware/mwlwifi/
+	$(CP) $(PKG_BUILD_DIR)/bin/firmware/88W8897.bin $(1)/lib/firmware/mwlwifi/
+	$(CP) $(PKG_BUILD_DIR)/bin/firmware/88W8964.bin $(1)/lib/firmware/mwlwifi/
+	$(CP) $(PKG_BUILD_DIR)/bin/firmware/Marvell_license.txt $(1)/lib/firmware/mwlwifi/
 endef
 
 $(eval $(call KernelPackage,mwlwifi))
-$(eval $(call BuildPackage,mwlwifi-firmware-88w8864))
-$(eval $(call BuildPackage,mwlwifi-firmware-88w8897))
-$(eval $(call BuildPackage,mwlwifi-firmware-88w8964))
-$(eval $(call BuildPackage,mwlwifi-firmware-88w8997))

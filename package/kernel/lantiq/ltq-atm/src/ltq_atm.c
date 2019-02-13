@@ -19,8 +19,6 @@
 ** HISTORY
 ** $Date        $Author         $Comment
 ** 07 JUL 2009  Xu Liang        Init Version
-**
-** Copyright 2017 Alexander Couzens <lynxis@fe80.eu>
 *******************************************************************************/
 
 #define IFX_ATM_VER_MAJOR               1
@@ -187,9 +185,12 @@ static inline void u64_add_u32(ppe_u64_t, unsigned int, ppe_u64_t *);
  */
 static inline struct sk_buff* alloc_skb_rx(void);
 static inline struct sk_buff* alloc_skb_tx(unsigned int);
+struct sk_buff* atm_alloc_tx(struct atm_vcc *, unsigned int);
 static inline void atm_free_tx_skb_vcc(struct sk_buff *, struct atm_vcc *);
 static inline struct sk_buff *get_skb_rx_pointer(unsigned int);
 static inline int get_tx_desc(unsigned int);
+static struct sk_buff* skb_duplicate(struct sk_buff *);
+static struct sk_buff* skb_break_away_from_protocol(struct sk_buff *);
 
 /*
  *  mailbox handler and signal function
@@ -259,6 +260,8 @@ int (*ifx_mei_atm_showtime_exit)(void) = NULL;
 EXPORT_SYMBOL(ifx_mei_atm_showtime_exit);
 
 #endif
+
+static struct sk_buff* (*ifx_atm_alloc_tx)(struct atm_vcc *, unsigned int) = NULL;
 
 static struct atm_priv_data g_atm_priv_data;
 
@@ -367,9 +370,7 @@ static int ppe_open(struct atm_vcc *vcc)
 	/*  check bandwidth */
 	if ( (vcc->qos.txtp.traffic_class == ATM_CBR && vcc->qos.txtp.max_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
 		|| (vcc->qos.txtp.traffic_class == ATM_VBR_RT && vcc->qos.txtp.max_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
-#if 0
 		|| (vcc->qos.txtp.traffic_class == ATM_VBR_NRT && vcc->qos.txtp.scr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
-#endif
 		|| (vcc->qos.txtp.traffic_class == ATM_UBR_PLUS && vcc->qos.txtp.min_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate)) )
 	{
 		ret = -EINVAL;
@@ -407,9 +408,7 @@ static int ppe_open(struct atm_vcc *vcc)
 		port->tx_current_cell_rate += vcc->qos.txtp.max_pcr;
 		break;
 	case ATM_VBR_NRT:
-#if 0
 		port->tx_current_cell_rate += vcc->qos.txtp.scr;
-#endif
 		break;
 	case ATM_UBR_PLUS:
 		port->tx_current_cell_rate += vcc->qos.txtp.min_pcr;
@@ -427,6 +426,8 @@ static int ppe_open(struct atm_vcc *vcc)
 
 	/*  enable irq  */
 	if ( f_enable_irq ) {
+		ifx_atm_alloc_tx = atm_alloc_tx;
+
 		*MBOX_IGU1_ISRC = (1 << RX_DMA_CH_AAL) | (1 << RX_DMA_CH_OAM);
 		*MBOX_IGU1_IER  = (1 << RX_DMA_CH_AAL) | (1 << RX_DMA_CH_OAM);
 
@@ -438,9 +439,6 @@ static int ppe_open(struct atm_vcc *vcc)
 
 	/*  set htu entry   */
 	set_htu_entry(vpi, vci, conn, vcc->qos.aal == ATM_AAL5 ? 1 : 0, 0);
-
-	*MBOX_IGU1_ISRC |= (1 << (conn + FIRST_QSB_QID + 16));
-	*MBOX_IGU1_IER |= (1 << (conn + FIRST_QSB_QID + 16));
 
 	ret = 0;
 
@@ -475,8 +473,10 @@ static void ppe_close(struct atm_vcc *vcc)
 	clear_bit(conn, &g_atm_priv_data.conn_table);
 
 	/*  disable irq */
-	if ( g_atm_priv_data.conn_table == 0 )
+	if ( g_atm_priv_data.conn_table == 0 ) {
 		disable_irq(PPE_MAILBOX_IGU1_INT);
+		ifx_atm_alloc_tx = NULL;
+	}
 
 	/*  release bandwidth   */
 	switch ( vcc->qos.txtp.traffic_class )
@@ -486,9 +486,7 @@ static void ppe_close(struct atm_vcc *vcc)
 		port->tx_current_cell_rate -= vcc->qos.txtp.max_pcr;
 		break;
 	case ATM_VBR_NRT:
-#if 0
 		port->tx_current_cell_rate -= vcc->qos.txtp.scr;
-#endif
 		break;
 	case ATM_UBR_PLUS:
 		port->tx_current_cell_rate -= vcc->qos.txtp.min_pcr;
@@ -507,17 +505,14 @@ static int ppe_send(struct atm_vcc *vcc, struct sk_buff *skb)
 	int ret;
 	int conn;
 	int desc_base;
-	int byteoff;
-	int required;
-	/* the len of the data without offset and header */
-	int datalen;
-	unsigned long flags;
 	struct tx_descriptor reg_desc = {0};
-	struct tx_inband_header *header;
+	struct sk_buff *new_skb;
 
 	if ( vcc == NULL || skb == NULL )
 		return -EINVAL;
 
+	skb_get(skb);
+	atm_free_tx_skb_vcc(skb, vcc);
 
 	conn = find_vcc(vcc);
 	if ( conn < 0 ) {
@@ -531,28 +526,31 @@ static int ppe_send(struct atm_vcc *vcc, struct sk_buff *skb)
 		goto PPE_SEND_FAIL;
 	}
 
-	byteoff = (unsigned int)skb->data & (DATA_BUFFER_ALIGNMENT - 1);
-	required = sizeof(*header) + byteoff;
-	if (!skb_clone_writable(skb, required)) {
-		int expand_by = 0;
-		int ret;
-
-		if (skb_headroom(skb) < required)
-			expand_by = required - skb_headroom(skb);
-
-		ret = pskb_expand_head(skb, expand_by, 0, GFP_ATOMIC);
-		if (ret) {
-			printk("pskb_expand_head failed.\n");
-			atm_free_tx_skb_vcc(skb, vcc);
-			return ret;
-		}
-	}
-
-	datalen = skb->len;
-	header = (void *)skb_push(skb, byteoff + TX_INBAND_HEADER_LENGTH);
-
-
 	if ( vcc->qos.aal == ATM_AAL5 ) {
+		int byteoff;
+		int datalen;
+		struct tx_inband_header *header;
+
+		byteoff = (unsigned int)skb->data & (DATA_BUFFER_ALIGNMENT - 1);
+		if ( skb_headroom(skb) < byteoff + TX_INBAND_HEADER_LENGTH )
+			new_skb = skb_duplicate(skb);
+		else
+			new_skb = skb_break_away_from_protocol(skb);
+		if ( new_skb == NULL ) {
+			pr_err("either skb_duplicate or skb_break_away_from_protocol fail\n");
+			ret = -ENOMEM;
+			goto PPE_SEND_FAIL;
+		}
+		dev_kfree_skb_any(skb);
+		skb = new_skb;
+
+		datalen = skb->len;
+		byteoff = (unsigned int)skb->data & (DATA_BUFFER_ALIGNMENT - 1);
+
+		skb_push(skb, byteoff + TX_INBAND_HEADER_LENGTH);
+
+		header = (struct tx_inband_header *)skb->data;
+
 		/*  setup inband trailer    */
 		header->uu   = 0;
 		header->cpi  = 0;
@@ -572,9 +570,23 @@ static int ppe_send(struct atm_vcc *vcc, struct sk_buff *skb)
 		reg_desc.byteoff = byteoff;
 		reg_desc.iscell  = 0;
 	} else {
+		/*  if data pointer is not aligned, allocate new sk_buff    */
+		if ( ((unsigned int)skb->data & (DATA_BUFFER_ALIGNMENT - 1)) != 0 ) {
+			pr_err("skb->data not aligned\n");
+			new_skb = skb_duplicate(skb);
+		} else
+			new_skb = skb_break_away_from_protocol(skb);
+		if ( new_skb == NULL ) {
+			pr_err("either skb_duplicate or skb_break_away_from_protocol fail\n");
+			ret = -ENOMEM;
+			goto PPE_SEND_FAIL;
+		}
+		dev_kfree_skb_any(skb);
+		skb = new_skb;
+
 		reg_desc.dataptr = (unsigned int)skb->data >> 2;
 		reg_desc.datalen = skb->len;
-		reg_desc.byteoff = byteoff;
+		reg_desc.byteoff = 0;
 		reg_desc.iscell  = 1;
 	}
 
@@ -582,25 +594,23 @@ static int ppe_send(struct atm_vcc *vcc, struct sk_buff *skb)
 	reg_desc.c = 1;
 	reg_desc.sop = reg_desc.eop = 1;
 
-	spin_lock_irqsave(&g_atm_priv_data.conn[conn].lock, flags);
 	desc_base = get_tx_desc(conn);
 	if ( desc_base < 0 ) {
-		spin_unlock_irqrestore(&g_atm_priv_data.conn[conn].lock, flags);
 		pr_debug("ALLOC_TX_CONNECTION_FAIL\n");
 		ret = -EIO;
 		goto PPE_SEND_FAIL;
 	}
-	/*  update descriptor send pointer  */
-	if ( g_atm_priv_data.conn[conn].tx_skb[desc_base] != NULL )
-		dev_kfree_skb_any(g_atm_priv_data.conn[conn].tx_skb[desc_base]);
-	g_atm_priv_data.conn[conn].tx_skb[desc_base] = skb;
-
-	spin_unlock_irqrestore(&g_atm_priv_data.conn[conn].lock, flags);
 
 	if ( vcc->stats )
 		atomic_inc(&vcc->stats->tx);
 	if ( vcc->qos.aal == ATM_AAL5 )
 		g_atm_priv_data.wtx_pdu++;
+
+	/*  update descriptor send pointer  */
+	if ( g_atm_priv_data.conn[conn].tx_skb[desc_base] != NULL )
+		dev_kfree_skb_any(g_atm_priv_data.conn[conn].tx_skb[desc_base]);
+	g_atm_priv_data.conn[conn].tx_skb[desc_base] = skb;
+
 	/*  write discriptor to memory and write back cache */
 	g_atm_priv_data.conn[conn].tx_desc[desc_base] = reg_desc;
 	dma_cache_wback((unsigned long)skb->data, skb->len);
@@ -778,6 +788,38 @@ static inline struct sk_buff* alloc_skb_tx(unsigned int size)
 	return skb;
 }
 
+struct sk_buff* atm_alloc_tx(struct atm_vcc *vcc, unsigned int size)
+{
+	int conn;
+	struct sk_buff *skb;
+
+	/*  oversize packet */
+	if ( size > aal5s_max_packet_size ) {
+		pr_err("atm_alloc_tx: oversize packet\n");
+		return NULL;
+	}
+	/*  send buffer overflow    */
+	if ( sk_wmem_alloc_get(sk_atm(vcc)) && !atm_may_send(vcc, size) ) {
+		pr_err("atm_alloc_tx: send buffer overflow\n");
+		return NULL;
+	}
+	conn = find_vcc(vcc);
+	if ( conn < 0 ) {
+		pr_err("atm_alloc_tx: unknown VCC\n");
+		return NULL;
+	}
+
+	skb = dev_alloc_skb(size);
+	if ( skb == NULL ) {
+		pr_err("atm_alloc_tx: sk buffer is used up\n");
+		return NULL;
+	}
+
+	atomic_add(skb->truesize, &sk_atm(vcc)->sk_wmem_alloc);
+
+	return skb;
+}
+
 static inline void atm_free_tx_skb_vcc(struct sk_buff *skb, struct atm_vcc *vcc)
 {
 	if ( vcc->pop != NULL )
@@ -814,40 +856,42 @@ static inline int get_tx_desc(unsigned int conn)
 	return desc_base;
 }
 
-static void free_tx_ring(unsigned int queue)
+static struct sk_buff* skb_duplicate(struct sk_buff *skb)
 {
-	unsigned long flags;
-	int i;
-	struct connection *conn = &g_atm_priv_data.conn[queue];
-	struct sk_buff *skb;
+	struct sk_buff *new_skb;
 
-	if (!conn)
-		return;
+	new_skb = alloc_skb_tx(skb->len);
+	if ( new_skb == NULL )
+		return NULL;
 
-	spin_lock_irqsave(&conn->lock, flags);
+	skb_put(new_skb, skb->len);
+	memcpy(new_skb->data, skb->data, skb->len);
 
-	for (i = 0; i < dma_tx_descriptor_length; i++) {
-		if (conn->tx_desc[i].own == 0 && conn->tx_skb[i] != NULL) {
-			skb = conn->tx_skb[i];
-			conn->tx_skb[i] = NULL;
-			atm_free_tx_skb_vcc(skb, ATM_SKB(skb)->vcc);
-		}
-	}
-	spin_unlock_irqrestore(&conn->lock, flags);
+	return new_skb;
 }
 
-static void mailbox_tx_handler(unsigned int queue_bitmap)
+static struct sk_buff* skb_break_away_from_protocol(struct sk_buff *skb)
 {
-	int i;
-	int bit;
+	struct sk_buff *new_skb;
 
-	/* only get valid queues */
-	queue_bitmap &= g_atm_priv_data.conn_table;
+	if ( skb_shared(skb) ) {
+		new_skb = skb_clone(skb, GFP_ATOMIC);
+		if ( new_skb == NULL )
+			return NULL;
+	} else
+		new_skb = skb_get(skb);
 
-	for ( i = 0, bit = 1; i < MAX_PVC_NUMBER; i++, bit <<= 1 ) {
-		if (queue_bitmap & bit)
-			free_tx_ring(i);
-	}
+	skb_dst_drop(new_skb);
+#if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
+	nf_conntrack_put(new_skb->nfct);
+	new_skb->nfct = NULL;
+  #ifdef CONFIG_BRIDGE_NETFILTER
+	nf_bridge_put(new_skb->nf_bridge);
+	new_skb->nf_bridge = NULL;
+  #endif
+#endif
+
+	return new_skb;
 }
 
 static inline void mailbox_oam_rx_handler(void)
@@ -1000,21 +1044,11 @@ static inline void mailbox_aal_rx_handler(void)
 
 static void do_ppe_tasklet(unsigned long data)
 {
-	unsigned int irqs = *MBOX_IGU1_ISR;
 	*MBOX_IGU1_ISRC = *MBOX_IGU1_ISR;
-
-	if (irqs & (1 << RX_DMA_CH_AAL))
-		mailbox_aal_rx_handler();
-	if (irqs & (1 << RX_DMA_CH_OAM))
-		mailbox_oam_rx_handler();
-
-	/* any valid tx irqs */
-	if ((irqs >> (FIRST_QSB_QID + 16)) & g_atm_priv_data.conn_table)
-		mailbox_tx_handler(irqs >> (FIRST_QSB_QID + 16));
+	mailbox_oam_rx_handler();
+	mailbox_aal_rx_handler();
 
 	if ((*MBOX_IGU1_ISR & ((1 << RX_DMA_CH_AAL) | (1 << RX_DMA_CH_OAM))) != 0)
-		tasklet_schedule(&g_dma_tasklet);
-	else if (*MBOX_IGU1_ISR >> (FIRST_QSB_QID + 16)) /* TX queue */
 		tasklet_schedule(&g_dma_tasklet);
 	else
 		enable_irq(PPE_MAILBOX_IGU1_INT);
@@ -1125,13 +1159,10 @@ static void set_qsb(struct atm_vcc *vcc, struct atm_qos *qos, unsigned int queue
 	 *  Sustained Cell Rate (SCR) Leaky Bucket Shaper VBR.0/VBR.1
 	 */
 	if ( qos->txtp.traffic_class == ATM_VBR_RT || qos->txtp.traffic_class == ATM_VBR_NRT ) {
-#if 0
 		if ( qos->txtp.scr == 0 ) {
-#endif
 			/*  disable shaper  */
 			qsb_queue_vbr_parameter_table.bit.taus = 0;
 			qsb_queue_vbr_parameter_table.bit.ts = 0;
-#if 0
 		} else {
 			/*  Cell Loss Priority  (CLP)   */
 			if ( (vcc->atm_options & ATM_ATMOPT_CLP) )
@@ -1151,7 +1182,6 @@ static void set_qsb(struct atm_vcc *vcc, struct atm_qos *qos, unsigned int queue
 			else
 				qsb_queue_vbr_parameter_table.bit.taus = tmp;
 		}
-#endif
 	} else {
 		qsb_queue_vbr_parameter_table.bit.taus = 0;
 		qsb_queue_vbr_parameter_table.bit.ts = 0;
@@ -1472,7 +1502,6 @@ static inline int init_priv_data(void)
 	p_tx_desc = (volatile struct tx_descriptor *)((((unsigned int)g_atm_priv_data.tx_desc_base + DESC_ALIGNMENT - 1) & ~(DESC_ALIGNMENT - 1)) | KSEG1);
 	ppskb = (struct sk_buff **)(((unsigned int)g_atm_priv_data.tx_skb_base + 3) & ~3);
 	for ( i = 0; i < MAX_PVC_NUMBER; i++ ) {
-		spin_lock_init(&g_atm_priv_data.conn[i].lock);
 		g_atm_priv_data.conn[i].tx_desc = &p_tx_desc[i * dma_tx_descriptor_length];
 		g_atm_priv_data.conn[i].tx_skb  = &ppskb[i * dma_tx_descriptor_length];
 	}
@@ -1676,7 +1705,7 @@ static inline void init_tx_tables(void)
 
 static int atm_showtime_enter(struct port_cell_info *port_cell, void *xdata_addr)
 {
-	int i, j, port_num;
+	int i, j;
 
 	ASSERT(port_cell != NULL, "port_cell is NULL");
 	ASSERT(xdata_addr != NULL, "xdata_addr is NULL");
@@ -1699,9 +1728,6 @@ static int atm_showtime_enter(struct port_cell_info *port_cell, void *xdata_addr
 
 	g_showtime = 1;
 
-	for ( port_num = 0; port_num < ATM_PORT_NUMBER; port_num++ )
-		atm_dev_signal_change(g_atm_priv_data.port[port_num].dev, ATM_PHY_SIG_FOUND);
-
 #if defined(CONFIG_VR9)
 	IFX_REG_W32(0x0F, UTP_CFG);
 #endif
@@ -1716,18 +1742,12 @@ static int atm_showtime_enter(struct port_cell_info *port_cell, void *xdata_addr
 
 static int atm_showtime_exit(void)
 {
-	int port_num;
-
 	if ( !g_showtime )
 		return -1;
 
 #if defined(CONFIG_VR9)
 	IFX_REG_W32(0x00, UTP_CFG);
 #endif
-
-	for ( port_num = 0; port_num < ATM_PORT_NUMBER; port_num++ )
-		atm_dev_signal_change(g_atm_priv_data.port[port_num].dev, ATM_PHY_SIG_LOST);
-
 	g_showtime = 0;
 	g_xdata_addr = NULL;
 	printk("leave showtime\n");
@@ -1760,6 +1780,7 @@ static int ltq_atm_probe(struct platform_device *pdev)
 	int ret;
 	int port_num;
 	struct port_cell_info port_cell = {0};
+	int i, j;
 	char ver_str[256];
 
 	match = of_match_device(ltq_atm_match, &pdev->dev);
@@ -1793,19 +1814,11 @@ static int ltq_atm_probe(struct platform_device *pdev)
 			g_atm_priv_data.port[port_num].dev->ci_range.vci_bits = 16;
 			g_atm_priv_data.port[port_num].dev->link_rate = g_atm_priv_data.port[port_num].tx_max_cell_rate;
 			g_atm_priv_data.port[port_num].dev->dev_data = (void*)port_num;
-
-#if defined(CONFIG_IFXMIPS_DSL_CPE_MEI) || defined(CONFIG_IFXMIPS_DSL_CPE_MEI_MODULE)
-			atm_dev_signal_change(g_atm_priv_data.port[port_num].dev, ATM_PHY_SIG_LOST);
-#endif
 		}
 	}
 
 	/*  register interrupt handler  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,1,0)
-	ret = request_irq(PPE_MAILBOX_IGU1_INT, mailbox_irq_handler, 0, "atm_mailbox_isr", &g_atm_priv_data);
-#else
 	ret = request_irq(PPE_MAILBOX_IGU1_INT, mailbox_irq_handler, IRQF_DISABLED, "atm_mailbox_isr", &g_atm_priv_data);
-#endif
 	if ( ret ) {
 		if ( ret == -EBUSY ) {
 			pr_err("IRQ may be occupied by other driver, please reconfig to disable it.\n");
@@ -1826,11 +1839,15 @@ static int ltq_atm_probe(struct platform_device *pdev)
 	port_cell.port_num = ATM_PORT_NUMBER;
 	ifx_mei_atm_showtime_check(&g_showtime, &port_cell, &g_xdata_addr);
 	if ( g_showtime ) {
-		atm_showtime_enter(&port_cell, &g_xdata_addr);
-	} else {
-		qsb_global_set();
+		for ( i = 0; i < ATM_PORT_NUMBER; i++ )
+			if ( port_cell.tx_link_rate[i] != 0 )
+				break;
+		for ( j = 0; j < ATM_PORT_NUMBER; j++ )
+			g_atm_priv_data.port[j].tx_max_cell_rate =
+				port_cell.tx_link_rate[j] != 0 ? port_cell.tx_link_rate[j] : port_cell.tx_link_rate[i];
 	}
 
+	qsb_global_set();
 	validate_oam_htu_entry();
 
 	ifx_mei_atm_showtime_enter = atm_showtime_enter;

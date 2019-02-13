@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2016 OpenWrt.org
+# Copyright (C) 2010-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,20 +8,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libusb
-PKG_VERSION:=1.0.22
-PKG_RELEASE:=2
+PKG_VERSION:=1.0.19
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=\
-  https://github.com/libusb/libusb/releases/download/v$(PKG_VERSION) \
-  @SF/$(PKG_NAME)
-PKG_HASH:=75aeb9d59a4fdb800d329a545c2e6799f732362193b465ea198f2aa275518157
+PKG_SOURCE_URL:=@SF/$(PKG_NAME)
+PKG_MD5SUM:=f9e2bb5879968467e5ca756cb4e1fa7e
 
 PKG_INSTALL:=1
-PKG_BUILD_PARALLEL:=0
+PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=LGPL-2.1
 
-PKG_MAINTAINER := Felix Fietkau <nbd@nbd.name>
+PKG_MAINTAINER := Felix Fietkau <nbd@openwrt.org>
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -30,8 +28,7 @@ define Package/libusb-1.0
   CATEGORY:=Libraries
   TITLE:=A library for accessing Linux USB devices
   DEPENDS:=+libpthread +librt
-  URL:=http://libusb.info/
-  ABI_VERSION:=0
+  URL:=http://libusb.wiki.sourceforge.net/
 endef
 
 define Package/libusb-1.0/description
@@ -50,7 +47,7 @@ endef
 
 define Package/libusb-1.0/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libusb*.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libusb*.so* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libusb-1.0))

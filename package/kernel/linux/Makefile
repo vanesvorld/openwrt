@@ -1,4 +1,4 @@
-#
+# 
 # Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -14,17 +14,17 @@ PKG_FLAGS:=hold
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
 SCAN_DEPS=modules/*.mk $(TOPDIR)/target/linux/*/modules.mk $(TOPDIR)/include/netfilter.mk
 
-PKG_LICENSE:=GPL-2.0
+PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
 export SHELL:=/bin/sh
 .ONESHELL:
-.SHELLFLAGS = -ec
 
 include $(INCLUDE_DIR)/package.mk
 
+STAMP_BUILT:=$(STAMP_BUILT)_$(firstword $(shell $(SCRIPT_DIR)/kconfig.pl $(LINUX_DIR)/.config | md5sum))
+
 ifeq ($(DUMP),)
-  STAMP_BUILT:=$(STAMP_BUILT)_$(shell $(SCRIPT_DIR)/kconfig.pl $(LINUX_DIR)/.config | mkhash md5)
   -include $(LINUX_DIR)/.config
 endif
 
@@ -49,7 +49,6 @@ define Package/kernel
   TITLE:=Virtual kernel package
   VERSION:=$(LINUX_VERSION)-$(LINUX_RELEASE)-$(LINUX_VERMAGIC)
   URL:=http://www.kernel.org/
-  PKG_FLAGS:=nonshared
 endef
 
 define Package/kernel/install

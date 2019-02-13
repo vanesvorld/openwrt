@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2016 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,49 +7,34 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
+PKG_REV:=7.6-2013.05
+PKG_VERSION_MAJOR:=7.6
+PKG_VERSION:=linaro-$(PKG_REV)
 
-ifeq ($(CONFIG_arc),y)
-PKG_VERSION:=arc-2017.09-gdb
-
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils-gdb/archive/arc-2017.09-gdb
-PKG_HASH:=7e3c2a763bf500a40c5c4591a7e22c591dafc1f214b1d514895c1096e85c883a
-GDB_DIR:=binutils-$(PKG_NAME)-$(PKG_VERSION)
-PATCH_DIR:=./patches-arc
-else
-PKG_VERSION:=8.2.1
-
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@GNU/gdb
-PKG_HASH:=0a6a432907a03c5c8eaad3c3cffd50c00a40c3a5e3c4039440624bae703f2202
-GDB_DIR:=$(PKG_NAME)-$(PKG_VERSION)
-endif
-
-HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GDB_DIR)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_MD5SUM:=816290b91cff03912320089d353e8a12
+PKG_SOURCE_URL:=https://releases.linaro.org/archive/13.05/components/toolchain/gdb-linaro/
 
 HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
-HOST_CONFIGURE_VARS += \
-	gdb_cv_func_sigsetjmp=yes
-
-HOST_CONFIGURE_ARGS = \
-	--prefix=$(TOOLCHAIN_DIR) \
-	--build=$(GNU_HOST_NAME) \
-	--host=$(GNU_HOST_NAME) \
-	--target=$(REAL_GNU_TARGET_NAME) \
-	--disable-werror \
-	--without-uiout \
-	--enable-tui --disable-gdbtk --without-x \
-	--without-included-gettext \
-	--enable-threads \
-	--with-expat \
-	--without-python \
-	--disable-binutils \
-	--disable-ld \
-	--disable-gas \
-	--disable-sim
+define Host/Configure
+	(cd $(HOST_BUILD_DIR); \
+		gdb_cv_func_sigsetjmp=yes \
+		CFLAGS="-O2" \
+		$(HOST_BUILD_DIR)/configure \
+		--prefix=$(TOOLCHAIN_DIR) \
+		--build=$(GNU_HOST_NAME) \
+		--host=$(GNU_HOST_NAME) \
+		--target=$(REAL_GNU_TARGET_NAME) \
+		--disable-werror \
+		--without-uiout \
+		--disable-tui --disable-gdbtk --without-x \
+		--without-included-gettext \
+		--enable-threads \
+	);
+endef
 
 define Host/Install
 	mkdir -p $(TOOLCHAIN_DIR)/bin

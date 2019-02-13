@@ -1,4 +1,4 @@
-#
+# 
 # Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -9,12 +9,14 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lua
 PKG_VERSION:=5.1.5
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
+	http://ftp.gwdg.de/pub/languages/lua/ \
+	http://mirrors.dotsrc.org/lua/ \
 	http://www.tecgraf.puc-rio.br/lua/ftp/
-PKG_HASH:=2640fc56a795f29d28ef15e13c34a47e223960b0240e8cb0a82d9b0738695333
+PKG_MD5SUM:=2e115fe26e435e33b0d5c022e4490567
 PKG_BUILD_PARALLEL:=1
 
 PKG_LICENSE:=MIT
@@ -31,7 +33,7 @@ define Package/lua/Default
   CATEGORY:=Languages
   TITLE:=Lua programming language
   URL:=http://www.lua.org/
-  MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
+  MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 endef
 
 define Package/lua/Default/description
@@ -46,7 +48,6 @@ $(call Package/lua/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE+= (libraries)
-  ABI_VERSION:=5.1.5
 endef
 
 define Package/liblua/description
@@ -92,6 +93,12 @@ endef
 
 TARGET_CFLAGS += -DLUA_USE_LINUX $(FPIC) -std=gnu99
 
+ifneq ($(CONFIG_USE_GLIBC),)
+  ifeq ($(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),)
+    TARGET_CFLAGS += -DNO_GETLOGIN
+  endif
+endif
+
 define Build/Compile
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CROSS)gcc" \
@@ -110,7 +117,7 @@ define Build/Compile
 endef
 
 define Host/Configure
-	$(SED) 's,"/usr/local/","$(STAGING_DIR_HOSTPKG)/",' $(HOST_BUILD_DIR)/src/luaconf.h
+	$(SED) 's,"/usr/local/","$(STAGING_DIR_HOST)/",' $(HOST_BUILD_DIR)/src/luaconf.h
 endef
 
 ifeq ($(HOST_OS),Darwin)
@@ -131,7 +138,7 @@ endef
 
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) \
-		INSTALL_TOP="$(STAGING_DIR_HOSTPKG)" \
+		INSTALL_TOP="$(STAGING_DIR_HOST)" \
 		install
 endef
 

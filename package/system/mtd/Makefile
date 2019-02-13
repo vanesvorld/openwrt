@@ -9,15 +9,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mtd
-PKG_RELEASE:=24
+PKG_RELEASE:=21
 
 PKG_BUILD_DIR := $(KERNEL_BUILD_DIR)/$(PKG_NAME)
 STAMP_PREPARED := $(STAMP_PREPARED)_$(call confvar,CONFIG_MTD_REDBOOT_PARTS)
 
 PKG_LICENSE:=GPL-2.0+
 PKG_LICENSE_FILES:=
-
-PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -31,6 +29,11 @@ endef
 define Package/mtd/description
  This package contains an utility useful to upgrade from other firmware or 
  older OpenWrt releases.
+endef
+
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
 target=$(firstword $(subst -, ,$(BOARD)))

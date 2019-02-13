@@ -9,11 +9,11 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=kirkwood
 BOARDNAME:=Marvell Kirkwood
-FEATURES:=usb nand squashfs ramdisk
+FEATURES:=targz usb jffs2_nand nand ubifs
 CPU_TYPE:=xscale
 MAINTAINER:=Luka Perkov <luka@openwrt.org>
 
-KERNEL_PATCHVER:=4.14
+KERNEL_PATCHVER:=3.18
 
 include $(INCLUDE_DIR)/target.mk
 

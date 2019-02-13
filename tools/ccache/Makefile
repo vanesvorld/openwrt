@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2015 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,11 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=ccache
-PKG_VERSION:=3.5
+PKG_VERSION:=3.1.9
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=https://download.samba.org/pub/ccache/ \
-		https://samba.org/ftp/ccache/
-PKG_HASH:=bdd44b72ae4506a2e2deef9fefb15c606a474bbca7658cd2be26105155eec012
+PKG_SOURCE_URL:=http://samba.org/ftp/ccache/
+PKG_MD5SUM:=522a6016bda56892653612bbdefff3e0
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -24,13 +23,29 @@ define Host/Install/ccache
 	$(CP) ./files/* $(STAGING_DIR_HOST)/bin/
 endef
 
-define Host/Clean
+ifneq ($(strip $(shell which ccache >/dev/null && echo found)),found)
+  define Host/Clean
 	-$(MAKE) -C $(HOST_BUILD_DIR) uninstall
 	$(call Host/Clean/Default)
-endef
-define Host/Install
+  endef
+  define Host/Install
 	$(call Host/Install/Default)
 	$(call Host/Install/ccache)
-endef
+  endef
+else
+  define Host/Prepare
+  endef
+  define Host/Configure
+  endef
+  define Host/Compile
+  endef
+  define Host/Install
+	$(call Host/Install/ccache)
+  endef
+  define Host/Clean
+  endef
+  define Download
+  endef
+endif
 
 $(eval $(call HostBuild))

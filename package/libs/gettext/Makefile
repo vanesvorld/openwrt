@@ -13,7 +13,7 @@ PKG_RELEASE:=2
 PKG_LICENSE:=FSFULLR
 PKG_LICENSE_FILES:=LICENSE
 
-PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
+PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
@@ -23,6 +23,11 @@ define Package/libintl
   CATEGORY:=Libraries
   TITLE:=Stub header for the GNU Internationalization library
 endef
+
+define Build/Prepare
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
+endef      
 
 define Build/Configure
 endef
@@ -47,11 +52,11 @@ define Host/Compile
 endef
 
 define Host/Install
-	$(INSTALL_DIR) $(STAGING_DIR_HOSTPKG)/include
-	$(INSTALL_DATA) ./src/include/libintl.h $(STAGING_DIR_HOSTPKG)/include/
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/include
+	$(INSTALL_DATA) ./src/include/libintl.h $(STAGING_DIR_HOST)/include/
 
-	$(INSTALL_DIR) $(STAGING_DIR_HOSTPKG)/share/aclocal
-	$(INSTALL_DATA) ./src/m4/* $(STAGING_DIR_HOSTPKG)/share/aclocal/
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/share/aclocal
+	$(INSTALL_DATA) ./src/m4/* $(STAGING_DIR_HOST)/share/aclocal/
 endef
 
 define Package/libintl/install

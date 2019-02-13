@@ -101,7 +101,7 @@ disable_broadcom() {
 		for dev in /sys/class/net/wds${device##wl}-* /sys/class/net/${device}-* /sys/class/net/${device}; do
 			if [ -e "$dev" ]; then
 				ifname=${dev##/sys/class/net/}
-				ip link set dev "$ifname" down
+				ifconfig "$ifname" down
 				unbridge "$ifname"
 			fi
 		done
@@ -372,8 +372,8 @@ enable_broadcom() {
 		local if_cmd="if_pre_up"
 		[ "$ifname" != "${ifname##${device}-}" ] && if_cmd="if_up"
 		append $if_cmd "macaddr=\$(wlc ifname '$ifname' cur_etheraddr)" ";$N"
-		append $if_cmd "ip link set dev '$ifname' address \$macaddr" ";$N"
-		append if_up "ip link set dev '$ifname' up" ";$N"
+		append $if_cmd "ifconfig '$ifname' \${macaddr:+hw ether \$macaddr}" ";$N"
+		append if_up "ifconfig '$ifname' up" ";$N"
 
 		local net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
@@ -456,22 +456,22 @@ detect_broadcom() {
 		config_get type wl${i} type
 		[ "$type" = broadcom ] && continue
 		channel=`wlc ifname wl${i} channel`
+		cat <<EOF
+config wifi-device  wl${i}
+	option type     broadcom
+	option channel  ${channel:-11}
+	option txantenna 3
+	option rxantenna 3
+	# REMOVE THIS LINE TO ENABLE WIFI:
+	option disabled 1
 
-		uci -q batch <<-EOF
-			set wireless.wl${i}=wifi-device
-			set wireless.wl${i}.type=broadcom
-			set wireless.wl${i}.channel=${channel:-11}
-			set wireless.wl${i}.txantenna=3
-			set wireless.wl${i}.rxantenna=3
-			set wireless.wl${i}.disabled=1
+config wifi-iface
+	option device   wl${i}
+	option network	lan
+	option mode     ap
+	option ssid     OpenWrt${i#0}
+	option encryption none
 
-			set wireless.default_wl${i}=wifi-iface
-			set wireless.default_wl${i}.device=wl${i}
-			set wireless.default_wl${i}.network=lan
-			set wireless.default_wl${i}.mode=ap
-			set wireless.default_wl${i}.ssid=OpenWrt${i#0}
-			set wireless.default_wl${i}.encryption=none
 EOF
-		uci -q commit wireless
 	done
 }

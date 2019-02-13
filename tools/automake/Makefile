@@ -7,12 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=automake
-PKG_CPE_ID:=cpe:/a:gnu:automake
-PKG_VERSION:=1.15.1
+PKG_VERSION:=1.15
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/automake
-PKG_HASH:=af6ba39142220687c500f79b4aa2f181d9b24e4f8d8ec497cea4ba26c64bedaf
+PKG_MD5SUM:=9a1ddb0e053474d9d1105cfe39b0c48d
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -25,7 +24,7 @@ HOST_CONFIGURE_VARS += \
 	am_cv_prog_PERL_ithreads=no
 
 define Host/Configure
-	(cd $(HOST_BUILD_DIR); $(AM_TOOL_PATHS) STAGING_DIR="" ./bootstrap)
+	(cd $(HOST_BUILD_DIR); $(AM_TOOL_PATHS) STAGING_DIR="" ./bootstrap.sh)
 	$(call Host/Configure/Default)
 endef
 

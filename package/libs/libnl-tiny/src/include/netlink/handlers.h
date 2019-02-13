@@ -14,7 +14,6 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <netlink/netlink-compat.h>
 #include <netlink/netlink-kernel.h>

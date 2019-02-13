@@ -2,7 +2,7 @@
 # Copyright (C) 2006-2010 OpenWrt.org
 # Copyright (C) 2006 Carlos Sobrinho
 
-START=19
+START=50
 STOP=50
 
 USE_PROCD=1
@@ -29,7 +29,7 @@ append_ports()
 
 validate_section_dropbear()
 {
-	uci_load_validate dropbear dropbear "$1" "$2" \
+	uci_validate_section dropbear dropbear "${1}" \
 		'PasswordAuth:bool:1' \
 		'enable:bool:1' \
 		'Interface:string' \
@@ -41,23 +41,22 @@ validate_section_dropbear()
 		'Port:list(port):22' \
 		'SSHKeepAlive:uinteger:300' \
 		'IdleTimeout:uinteger:0' \
-		'MaxAuthTries:uinteger:3' \
-		'RecvWindowSize:uinteger:0' \
-		'mdns:bool:1'
+		'mdns:uinteger:1'
 }
 
 dropbear_instance()
 {
-	local ipaddrs
+	local PasswordAuth enable Interface GatewayPorts \
+		RootPasswordAuth RootLogin rsakeyfile \
+		BannerFile Port SSHKeepAlive IdleTimeout \
+		mdns ipaddrs
 
-	[ "$2" = 0 ] || {
+	validate_section_dropbear "${1}" || {
 		echo "validation failed"
 		return 1
 	}
 
 	[ -n "${Interface}" ] && {
-		[ -n "${BOOT}" ] && return 0
-
 		network_get_ipaddrs_all ipaddrs "${Interface}" || {
 			echo "interface ${Interface} has no physdev or physdev has no suitable ip"
 			return 1
@@ -79,9 +78,6 @@ dropbear_instance()
 	append_ports "${ipaddrs}" "${Port}"
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
 	[ "${SSHKeepAlive}" -ne 0 ] && procd_append_param command -K "${SSHKeepAlive}"
-	[ "${MaxAuthTries}" -ne 0 ] && procd_append_param command -T "${MaxAuthTries}"
-	[ "${RecvWindowSize}" -gt 0 -a "${RecvWindowSize}" -le 1048576 ] && \
-		procd_append_param command -W "${RecvWindowSize}"
 	[ "${mdns}" -ne 0 ] && procd_add_mdns "ssh" "tcp" "$Port" "daemon=dropbear"
 	procd_set_param respawn
 	procd_close_instance
@@ -113,15 +109,7 @@ keygen()
 load_interfaces()
 {
 	config_get interface "$1" Interface
-	config_get enable "$1" enable 1
-
-	[ "${enable}" = "1" ] && interfaces=" ${interface} ${interfaces}"
-}
-
-boot()
-{
-	BOOT=1
-	start "$@"
+	interfaces=" ${interface} ${interfaces}"
 }
 
 start_service()
@@ -132,30 +120,27 @@ start_service()
 	. /lib/functions/network.sh
 
 	config_load "${NAME}"
-	config_foreach validate_section_dropbear dropbear dropbear_instance
+	config_foreach dropbear_instance dropbear
 }
 
 service_triggers()
 {
 	local interfaces
 
+	procd_open_trigger
 	procd_add_config_trigger "config.change" "dropbear" /etc/init.d/dropbear reload
 
 	config_load "${NAME}"
 	config_foreach load_interfaces dropbear
 
-	[ -n "${interfaces}" ] && {
+	[ -n "${interfaces}" ] & {
 		for n in $interfaces ; do
 			procd_add_interface_trigger "interface.*" $n /etc/init.d/dropbear reload
 		done
 	}
+	procd_close_trigger
 
 	procd_add_validation validate_section_dropbear
-}
-
-shutdown() {
-	# close all open connections
-	killall dropbear
 }
 
 killclients()

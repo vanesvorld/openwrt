@@ -169,9 +169,6 @@ static void __init rb750_setup(void)
 	rb750_nand_data.disable_pins = rb750_nand_disable_pins;
 	rb750_nand_data.latch_change = rb750_latch_change;
 	platform_device_register(&rb750_nand_device);
-
-	/* USB */
-	ath79_register_usb();
 }
 
 MIPS_MACHINE(ATH79_MACH_RB_750, "750i", "MikroTik RouterBOARD 750",
@@ -199,7 +196,7 @@ static struct ar8327_platform_data rb750gr3_ar8327_data = {
 static struct mdio_board_info rb750g3_mdio_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
-		.mdio_addr = 0,
+		.phy_addr = 0,
 		.platform_data = &rb750gr3_ar8327_data,
 	},
 };

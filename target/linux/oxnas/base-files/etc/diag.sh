@@ -1,21 +1,18 @@
 #!/bin/sh
 # Copyright (C) 2009-2013 OpenWrt.org
 
-. /lib/functions.sh
 . /lib/functions/leds.sh
+. /lib/oxnas.sh
 
 get_status_led() {
-	case $(board_name) in
-	"akitio,mycloud")
-		status_led="akitio:red:status"
-		;;
-	"mitrastar,stg-212")
+	case $(oxnas_board_name) in
+	stg212)
 		status_led="zyxel:blue:status"
 		;;
-	"shuttle,kd20")
+	kd20)
 		status_led="kd20:blue:status"
 		;;
-	"cloudengines,pogoplug"*)
+	pogoplugpro | pogoplugv3)
 		status_led="pogoplug:blue:internal"
 		;;
 	esac

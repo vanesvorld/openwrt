@@ -5,7 +5,6 @@
 
 #include <locale.h>
 #include <ctype.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,7 +41,7 @@ static int tty_stdio;
 static int valid_stdin = 1;
 static int sync_kconfig;
 static int conf_cnt;
-static char line[PATH_MAX];
+static char line[128];
 static struct menu *rootEntry;
 
 static void print_help(struct menu *menu)
@@ -75,9 +74,9 @@ static void strip(char *str)
 static void check_stdin(void)
 {
 	if (!valid_stdin) {
-	        printf("%s",_("aborted!\n\n"));
-		printf("%s",_("Console input/output is redirected. "));
-		printf("%s",_("Run 'make oldconfig' to update configuration.\n\n"));
+		printf(_("aborted!\n\n"));
+		printf(_("Console input/output is redirected. "));
+		printf(_("Run 'make oldconfig' to update configuration.\n\n"));
 		exit(1);
 	}
 }
@@ -87,7 +86,7 @@ static int conf_askvalue(struct symbol *sym, const char *def)
 	enum symbol_type type = sym_get_type(sym);
 
 	if (!sym_has_value(sym))
-	        printf("%s",_("(NEW) "));
+		printf(_("(NEW) "));
 
 	line[0] = '\n';
 	line[1] = 0;
@@ -110,7 +109,7 @@ static int conf_askvalue(struct symbol *sym, const char *def)
 		/* fall through */
 	case oldaskconfig:
 		fflush(stdout);
-		xfgets(line, sizeof(line), stdin);
+		xfgets(line, 128, stdin);
 		if (!tty_stdio)
 			printf("\n");
 		return 1;
@@ -288,7 +287,7 @@ static int conf_choice(struct menu *menu)
 			if (child->sym->name)
 				printf(" (%s)", child->sym->name);
 			if (!sym_has_value(child->sym))
-			        printf("%s",_(" (NEW)"));
+				printf(_(" (NEW)"));
 			printf("\n");
 		}
 		printf(_("%*schoice"), indent - 1, "");
@@ -312,7 +311,7 @@ static int conf_choice(struct menu *menu)
 			/* fall through */
 		case oldaskconfig:
 			fflush(stdout);
-			xfgets(line, sizeof(line), stdin);
+			xfgets(line, 128, stdin);
 			strip(line);
 			if (line[0] == '?') {
 				print_help(menu);
@@ -436,7 +435,7 @@ static void check_conf(struct menu *menu)
 				}
 			} else if (input_mode != olddefconfig) {
 				if (!conf_cnt++)
-				        printf("%s",_("*\n* Restart config...\n*\n"));
+					printf(_("*\n* Restart config...\n*\n"));
 				rootEntry = menu_get_parent_menu(menu);
 				conf(rootEntry);
 			}
@@ -472,7 +471,7 @@ static struct option long_opts[] = {
 static void conf_usage(const char *progname)
 {
 
-	printf("Usage: %s [-s] [option] <kconfig-file>\n", progname);
+	printf("Usage: %s [option] <kconfig-file>\n", progname);
 	printf("[option] is _one_ of the following:\n");
 	printf("  --listnewconfig         List new options\n");
 	printf("  --oldaskconfig          Start a new configuration using a line-oriented program\n");
@@ -503,11 +502,7 @@ int main(int ac, char **av)
 
 	tty_stdio = isatty(0) && isatty(1) && isatty(2);
 
-	while ((opt = getopt_long(ac, av, "r:w:s", long_opts, NULL)) != -1) {
-		if (opt == 's') {
-			conf_set_message_callback(NULL);
-			continue;
-		}
+	while ((opt = getopt_long(ac, av, "r:w:", long_opts, NULL)) != -1) {
 		switch (opt) {
 		case silentoldconfig:
 			sync_kconfig = 1;

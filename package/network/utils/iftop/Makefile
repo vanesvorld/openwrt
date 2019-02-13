@@ -8,17 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iftop
+PKG_VERSION:=1.0pre2
 PKG_RELEASE:=1
 
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://code.blinkace.com/pdw/iftop.git
-PKG_SOURCE_DATE:=2017-03-22
-PKG_SOURCE_VERSION:=949ed0f7e2c54c598868c270b82c2d702131a339
-PKG_MIRROR_HASH:=2ba96d9a2adf4e43aaab439a9ccab8f21b415da48d1c8939f6dcea8e6e11524f
-PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
-PKG_LICENSE:=GPL-2.0
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://www.ex-parrot.com/~pdw/iftop/download
+PKG_MD5SUM:=fef521a49ec0122458d02c64212af3c5
 
-PKG_FIXUP:=autoreconf
+PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 

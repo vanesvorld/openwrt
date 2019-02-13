@@ -13,14 +13,14 @@ FEATURES:=squashfs atm low_mem
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 SUBTARGETS:=generic ac49x
 
-KERNEL_PATCHVER:=4.9
-
-define Target/Description
-	Build firmware images for TI AR7 based routers.
-endef
+KERNEL_PATCHVER:=3.18
 
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES+= swconfig
+
+define Target/Description
+	Build firmware images for TI AR7 based routers.
+endef
 
 $(eval $(call BuildTarget))
