@@ -22,8 +22,6 @@
 ## version history
 # * version 1: initial file format with num files / name / length / md5 checksum 
 
-set -e
-
 ME="${0##*/}"
 
 usage() {
@@ -40,21 +38,7 @@ IMG_OUT=$1; shift
 FILE_NUM=$(($# / 2))
 FILES=""
 
-tmpdir="$( mktemp -d 2> /dev/null )"
-if [ -z "$tmpdir" ]; then
-	# try OSX signature
-	tmpdir="$( mktemp -t 'ubitmp' -d )"
-fi
-
-if [ -z "$tmpdir" ]; then
-	exit 1
-fi
-
-trap "rm -rf $tmpdir" EXIT
-
-IMG_TMP_OUT="${tmpdir}/out"
-
-printf "CE%02x%-32s%02x" $CE_VERSION "$IMG_TYPE" $FILE_NUM > "${IMG_TMP_OUT}"
+printf "CE%02x%-32s%02x" $CE_VERSION "$IMG_TYPE" $FILE_NUM > $IMG_OUT
 
 while [ "$#" -gt 1 ]
    do
@@ -63,16 +47,15 @@ while [ "$#" -gt 1 ]
 
       [ ! -f "$file" ] && echo "$ME: Not a valid file: $file" && usage
       FILES="$FILES $file"
-      md5=$(mkhash md5 "$file")
-      printf "%-32s%08x%32s" "$filename" $(stat -c "%s" "$file") "${md5%% *}" >> "${IMG_TMP_OUT}"
+      md5=$(cat "$file" | md5sum -)
+      printf "%-32s%08x%32s" "$filename" $(stat -c "%s" "$file") "${md5%% *}" >> $IMG_OUT
       shift 2
    done
 
 [ "$#" -eq 1 ] && echo "$ME: Filename not specified: $1" && usage
 
-mv "${IMG_TMP_OUT}" "${IMG_TMP_OUT}".tmp
-dd if="${IMG_TMP_OUT}.tmp" of="${IMG_TMP_OUT}" bs=65536 conv=sync 2>/dev/null
-rm "${IMG_TMP_OUT}".tmp
+mv $IMG_OUT $IMG_OUT.tmp
+dd if="$IMG_OUT.tmp" of="$IMG_OUT" bs=65536 conv=sync 2>/dev/null
+rm $IMG_OUT.tmp
 
-cat $FILES >> "${IMG_TMP_OUT}"
-cp "${IMG_TMP_OUT}" "${IMG_OUT}"
+cat $FILES >> $IMG_OUT

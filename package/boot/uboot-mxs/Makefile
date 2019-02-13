@@ -1,48 +1,98 @@
 #
-# Copyright (C) 2013-2016 OpenWrt.org
+# Copyright (C) 2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2019.01
+PKG_NAME:=u-boot
+PKG_VERSION:=2015.01
 PKG_RELEASE:=1
 
-PKG_HASH:=50bd7e5a466ab828914d080d5f6a432345b500e8fba1ad3b7b61e95e60d51c22
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:= \
+	http://mirror2.openwrt.org/sources \
+	ftp://ftp.denx.de/pub/u-boot
+PKG_MD5SUM:=7f08dc9e98a71652bd6968888ed6ec95
 
-include $(INCLUDE_DIR)/u-boot.mk
+PKG_LICENSE:=GPL-2.0 GPL-2.0+
+PKG_LICENSE_FILES:=Licenses/README
+
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/host-build.mk
 
-define U-Boot/Default
-  BUILD_TARGET:=mxs
-  UBOOT_IMAGE:=u-boot.sb
-  DEFAULT:=y
-  HIDDEN:=1
+define uboot/Default
+  TITLE:=
+  CONFIG:=
+  IMAGE:=
 endef
 
-define U-Boot/mx23_olinuxino
-  NAME:=Olinuxino i.MX233
+define uboot/mx23_olinuxino
+  TITLE:=U-Boot 2015.01 for the Olinuxino i.MX233
 endef
 
-define U-Boot/duckbill
-  NAME:=I2SE Duckbill
+define uboot/duckbill
+  TITLE:=U-Boot 2015.01 for the I2SE Duckbill
 endef
 
-UBOOT_TARGETS := \
+UBOOTS := \
 	mx23_olinuxino \
 	duckbill
+	
 
-UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE)
-
-Build/Exports:=$(Host/Exports)
-
-define Build/InstallDev
-	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(UBOOT_IMAGE)
+define Package/uboot/template
+define Package/uboot-mxs-$(1)
+  SECTION:=boot
+  CATEGORY:=Boot Loaders
+  DEPENDS:=@TARGET_mxs
+  TITLE:=$(2)
+  URL:=http://www.denx.de/wiki/U-Boot
+  VARIANT:=$(1)
+  MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
+endef
 endef
 
-$(eval $(call BuildPackage/U-Boot))
+define BuildUBootPackage
+	$(eval $(uboot/Default))
+	$(eval $(uboot/$(1)))
+	$(call Package/uboot/template,$(1),$(TITLE))
+endef
+
+ifdef BUILD_VARIANT
+$(eval $(call uboot/$(BUILD_VARIANT)))
+UBOOT_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
+UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
+endif
+
+define Build/Configure
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(UBOOT_CONFIG)_config
+endef
+
+define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CROSS_COMPILE=$(TARGET_CROSS) u-boot.sb
+endef
+
+
+define Package/uboot/install/default
+	$(INSTALL_DIR) $(BIN_DIR)/uboot-$(BOARD)-$(1)
+	dd if=$(PKG_BUILD_DIR)/u-boot.sb of=$(BIN_DIR)/uboot-$(BOARD)-$(1).sb bs=512 seek=4
+endef
+
+define Package/uboot/install/template
+define Package/uboot-mxs-$(1)/install
+	$(call Package/uboot/install/default,$(2))
+endef
+endef
+
+$(foreach u,$(UBOOTS), \
+	$(eval $(call Package/uboot/install/template,$(u),$(u))) \
+)
+
+$(foreach u,$(UBOOTS), \
+	$(eval $(call BuildUBootPackage,$(u))) \
+	$(eval $(call BuildPackage,uboot-mxs-$(u))) \
+)

@@ -5,7 +5,7 @@
  *
  * Based on the trx fixup code:
  *   Copyright (C) 2005 Mike Baker
- *   Copyright (C) 2008 Felix Fietkau <nbd@nbd.name>
+ *   Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,7 +22,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <endian.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -105,13 +104,14 @@ err_out:
 }
 
 int
-mtd_fixseama(const char *mtd, size_t offset, size_t data_size)
+mtd_fixseama(const char *mtd, size_t offset)
 {
 	int fd;
 	char *first_block;
 	ssize_t res;
 	size_t block_offset;
 	size_t data_offset;
+	size_t data_size;
 	struct seama_entity_header *shdr;
 
 	if (quiet < 2)
@@ -155,8 +155,7 @@ mtd_fixseama(const char *mtd, size_t offset, size_t data_size)
 	}
 
 	data_offset = offset + sizeof(struct seama_entity_header) + ntohs(shdr->metasize);
-	if (!data_size)
-		data_size = mtdsize - data_offset;
+	data_size = mtdsize - data_offset;
 	if (data_size > ntohl(shdr->size))
 		data_size = ntohl(shdr->size);
 	if (seama_fix_md5(shdr, fd, data_offset, data_size))

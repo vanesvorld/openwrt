@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012 Jo-Philipp Wich <jo@mein.io>
+# Copyright (C) 2012 Jo-Philipp Wich <jow@openwrt.org>
 #
 # This is free software, licensed under the Apache 2 license.
 #
@@ -17,7 +17,7 @@ define Package/owipcalc
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Simple IPv4/IPv6 address calculator
-  MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
+  MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 endef
 
 define Package/owipcalc/description
@@ -25,6 +25,12 @@ define Package/owipcalc/description
   with ip-address ranges, this is useful for scripts that e.g. need to
   partition ipv6-prefixes into small subnets or to calculate address ranges
   for dhcp pools.
+endef
+
+
+define Build/Prepare
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
 define Build/Configure

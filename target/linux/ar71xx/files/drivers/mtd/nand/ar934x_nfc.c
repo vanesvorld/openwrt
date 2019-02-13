@@ -8,17 +8,12 @@
  * by the Free Software Foundation.
  */
 
-#include <linux/version.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/module.h>
 #include <linux/dma-mapping.h>
 #include <linux/mtd/mtd.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
 #include <linux/mtd/nand.h>
-#else
-#include <linux/mtd/rawnand.h>
-#endif
 #include <linux/mtd/partitions.h>
 #include <linux/platform_device.h>
 #include <linux/delay.h>
@@ -192,9 +187,7 @@ nfc_debug_data(const char *label, void *data, int len) {}
 #endif /* AR934X_NFC_DEBUG_DATA */
 
 struct ar934x_nfc {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
 	struct mtd_info mtd;
-#endif
 	struct nand_chip nand_chip;
 	struct device *parent;
 	void __iomem *base;
@@ -266,22 +259,7 @@ ar934x_nfc_get_platform_data(struct ar934x_nfc *nfc)
 static inline struct
 ar934x_nfc *mtd_to_ar934x_nfc(struct mtd_info *mtd)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
 	return container_of(mtd, struct ar934x_nfc, mtd);
-#else
-	struct nand_chip *chip = mtd_to_nand(mtd);
-
-	return container_of(chip, struct ar934x_nfc, nand_chip);
-#endif
-}
-
-static struct mtd_info *ar934x_nfc_to_mtd(struct ar934x_nfc *nfc)
-{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
-	return &nfc->mtd;
-#else
-	return nand_to_mtd(&nfc->nand_chip);
-#endif
 }
 
 static inline bool ar934x_nfc_use_irq(struct ar934x_nfc *nfc)
@@ -437,7 +415,7 @@ ar934x_nfc_get_addr(struct ar934x_nfc *nfc, int column, int page_addr,
 			a0 |= ((page_addr >> 8) & 0xff) << 16;
 			a0 |= ((page_addr >> 16) & 0xff) << 24;
 		} else {
-			a0 = column & 0x0FFF;
+			a0 = column & 0xFFFF;
 			a0 |= (page_addr & 0xffff) << 16;
 
 			if (nfc->addr_count0 > 4)
@@ -547,9 +525,8 @@ ar934x_nfc_send_readid(struct ar934x_nfc *nfc, unsigned command)
 	cmd_reg = AR934X_NFC_CMD_SEQ_1C1AXR;
 	cmd_reg |= (command & AR934X_NFC_CMD_CMD0_M) << AR934X_NFC_CMD_CMD0_S;
 
-	err = ar934x_nfc_do_rw_command(nfc, -1, -1, AR934X_NFC_ID_BUF_SIZE,
-				       cmd_reg, nfc->ctrl_reg, false);
-
+	err = ar934x_nfc_do_rw_command(nfc, -1, -1, AR934X_NFC_ID_BUF_SIZE, 
+		cmd_reg, nfc->ctrl_reg, false);
 	nfc_debug_data("[id] ", nfc->buf, AR934X_NFC_ID_BUF_SIZE);
 
 	return err;
@@ -670,7 +647,7 @@ ar934x_nfc_cmdfunc(struct mtd_info *mtd, unsigned int command, int column,
 		   int page_addr)
 {
 	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
-	struct nand_chip *nand = &nfc->nand_chip;
+	struct nand_chip *nand = mtd->priv;
 
 	nfc->read_id = false;
 	if (command != NAND_CMD_PAGEPROG)
@@ -1005,10 +982,13 @@ ar934x_nfc_read_page(struct mtd_info *mtd, struct nand_chip *chip,
 
 static int
 ar934x_nfc_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
-			  const u8 *buf, int oob_required, int page)
+			  const u8 *buf, int oob_required)
 {
 	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
+	int page;
 	int len;
+
+	page = nfc->seqin_page_addr;
 
 	nfc_dbg(nfc, "write_page_raw: page:%d oob:%d\n", page, oob_required);
 
@@ -1025,10 +1005,13 @@ ar934x_nfc_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
 
 static int
 ar934x_nfc_write_page(struct mtd_info *mtd, struct nand_chip *chip,
-		      const u8 *buf, int oob_required, int page)
+		      const u8 *buf, int oob_required)
 {
 	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
+	int page;
 	int err;
+
+	page = nfc->seqin_page_addr;
 
 	nfc_dbg(nfc, "write_page: page:%d oob:%d\n", page, oob_required);
 
@@ -1150,6 +1133,7 @@ ar934x_nfc_init_tail(struct mtd_info *mtd)
 	case 16:
 	case 64:
 	case 128:
+	case 224:
 		ar934x_nfc_wr(nfc, AR934X_NFC_REG_SPARE_SIZE, mtd->oobsize);
 		break;
 
@@ -1263,7 +1247,6 @@ ar934x_nfc_init_tail(struct mtd_info *mtd)
 	return err;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
 static struct nand_ecclayout ar934x_nfc_oob_64_hwecc = {
 	.eccbytes = 28,
 	.eccpos = {
@@ -1284,60 +1267,43 @@ static struct nand_ecclayout ar934x_nfc_oob_64_hwecc = {
 	},
 };
 
-#else
-
-static int ar934x_nfc_ooblayout_ecc(struct mtd_info *mtd, int section,
-				    struct mtd_oob_region *oobregion)
-{
-	if (section)
-		return -ERANGE;
-
-	oobregion->offset = 20;
-	oobregion->length = 28;
-
-	return 0;
-}
-
-static int ar934x_nfc_ooblayout_free(struct mtd_info *mtd, int section,
-				     struct mtd_oob_region *oobregion)
-{
-	switch (section) {
-	case 0:
-		oobregion->offset = 4;
-		oobregion->length = 16;
-		return 0;
-	case 1:
-		oobregion->offset = 48;
-		oobregion->length = 16;
-		return 0;
-	default:
-		return -ERANGE;
-	}
-}
-
-static const struct mtd_ooblayout_ops ar934x_nfc_ecclayout_ops = {
-	.ecc = ar934x_nfc_ooblayout_ecc,
-	.free = ar934x_nfc_ooblayout_free,
+/* oob size = 224 */
+static struct nand_ecclayout ar934x_nfc_oob_224_hwecc = {
+	.eccbytes = 56,
+	.eccpos = {
+		20, 21, 22, 23, 24, 25, 26, 27,
+                28, 29, 30, 31, 32, 33, 34, 35,
+                36, 37, 38, 39, 40, 41, 42, 43,
+                44, 45, 46, 47, 48, 49, 50, 51,
+                52, 53, 54, 55, 56, 57, 58, 59,
+                60, 61, 62, 63, 64, 65, 66, 67,
+                68, 69, 70, 71, 72, 73, 74, 75,
+	},
+	.oobfree = {
+		{
+			.offset = 4,
+			.length = 16,
+		},
+		{
+			.offset = 76,
+			.length = 148,
+		},
+	},
 };
-#endif /* < 4.6 */
 
 static int
 ar934x_nfc_setup_hwecc(struct ar934x_nfc *nfc)
 {
 	struct nand_chip *nand = &nfc->nand_chip;
-	struct mtd_info *mtd = ar934x_nfc_to_mtd(nfc);
 	u32 ecc_cap;
 	u32 ecc_thres;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0)
-	struct mtd_oob_region oobregion;
-#endif
 
-	if (!IS_ENABLED(CONFIG_MTD_NAND_AR934X_HW_ECC)) {
+	if (!config_enabled(CONFIG_MTD_NAND_AR934X_HW_ECC)) {
 		dev_err(nfc->parent, "hardware ECC support is disabled\n");
 		return -EINVAL;
 	}
 
-	switch (mtd->writesize) {
+	switch (nfc->mtd.writesize) {
 	case 2048:
 		/*
 		 * Writing a subpage separately is not supported, because
@@ -1348,31 +1314,39 @@ ar934x_nfc_setup_hwecc(struct ar934x_nfc *nfc)
 		nand->ecc.size = 512;
 		nand->ecc.bytes = 7;
 		nand->ecc.strength = 4;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
 		nand->ecc.layout = &ar934x_nfc_oob_64_hwecc;
-#else
-		mtd_set_ooblayout(mtd, &ar934x_nfc_ecclayout_ops);
-#endif
 		break;
+        case 4096:
+                nand->options = NAND_NO_SUBPAGE_WRITE;
+                
+                // set this occording to the specific nand flash
+                // please read nand flash datasheet when you fix this
+                nand->ecc.size = 512;
+                nand->ecc.bytes = 7;
+                nand->ecc.strength = 4;
+                nand->ecc.layout = &ar934x_nfc_oob_224_hwecc;
 
-	default:
-		dev_err(nfc->parent,
-			"hardware ECC is not available for %d byte pages\n",
-			mtd->writesize);
-		return -EINVAL;
-	}
+                break;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
+        default:
+                dev_err(nfc->parent,
+                        "hardware ECC is not available for %d byte pages\n",
+                        nfc->mtd.writesize);
+                return -EINVAL;
+        }
+
 	BUG_ON(!nand->ecc.layout);
-#else
-	BUG_ON(!mtd->ooblayout->ecc);
-#endif
 
 	switch (nand->ecc.strength) {
 	case 4:
 		ecc_cap = AR934X_NFC_ECC_CTRL_ECC_CAP_4;
 		ecc_thres = 4;
 		break;
+
+	case 12:
+		ecc_cap = AR934X_NFC_ECC_CTRL_ECC_CAP_12;
+		ecc_thres = 12;
+	    break;
 
 	default:
 		dev_err(nfc->parent, "unsupported ECC strength %u\n",
@@ -1381,17 +1355,12 @@ ar934x_nfc_setup_hwecc(struct ar934x_nfc *nfc)
 	}
 
 	nfc->ecc_thres = ecc_thres;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
 	nfc->ecc_oob_pos = nand->ecc.layout->eccpos[0];
-#else
-	mtd->ooblayout->ecc(mtd, 0, &oobregion);
-	nfc->ecc_oob_pos = oobregion.offset;
-#endif
 
 	nfc->ecc_ctrl_reg = ecc_cap << AR934X_NFC_ECC_CTRL_ECC_CAP_S;
 	nfc->ecc_ctrl_reg |= ecc_thres << AR934X_NFC_ECC_CTRL_ERR_THRES_S;
 
-	nfc->ecc_offset_reg = mtd->writesize + nfc->ecc_oob_pos;
+	nfc->ecc_offset_reg = nfc->mtd.writesize + nfc->ecc_oob_pos;
 
 	nand->ecc.mode = NAND_ECC_HW;
 	nand->ecc.read_page = ar934x_nfc_read_page;
@@ -1447,7 +1416,7 @@ ar934x_nfc_probe(struct platform_device *pdev)
 	}
 
 	init_waitqueue_head(&nfc->irq_waitq);
-	ret = request_irq(nfc->irq, ar934x_nfc_irq_handler, 0,
+	ret = request_irq(nfc->irq, ar934x_nfc_irq_handler, IRQF_DISABLED,
 			  dev_name(&pdev->dev), nfc);
 	if (ret) {
 		dev_err(&pdev->dev, "requast_irq failed, err:%d\n", ret);
@@ -1459,11 +1428,9 @@ ar934x_nfc_probe(struct platform_device *pdev)
 	nfc->swap_dma = pdata->swap_dma;
 
 	nand = &nfc->nand_chip;
-	mtd = ar934x_nfc_to_mtd(nfc);
+	mtd = &nfc->mtd;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
 	mtd->priv = nand;
-#endif
 	mtd->owner = THIS_MODULE;
 	if (pdata->name)
 		mtd->name = pdata->name;
@@ -1508,18 +1475,6 @@ ar934x_nfc_probe(struct platform_device *pdev)
 	switch (pdata->ecc_mode) {
 	case AR934X_NFC_ECC_SOFT:
 		nand->ecc.mode = NAND_ECC_SOFT;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0)
-		nand->ecc.algo = NAND_ECC_HAMMING;
-#endif
-		break;
-
-	case AR934X_NFC_ECC_SOFT_BCH:
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
-		nand->ecc.mode = NAND_ECC_SOFT_BCH;
-#else
-		nand->ecc.mode = NAND_ECC_SOFT;
-		nand->ecc.algo = NAND_ECC_BCH;
-#endif
 		break;
 
 	case AR934X_NFC_ECC_HW:
@@ -1561,12 +1516,10 @@ static int
 ar934x_nfc_remove(struct platform_device *pdev)
 {
 	struct ar934x_nfc *nfc;
-	struct mtd_info *mtd;
 
 	nfc = platform_get_drvdata(pdev);
 	if (nfc) {
-		mtd = ar934x_nfc_to_mtd(nfc);
-		nand_release(mtd);
+		nand_release(&nfc->mtd);
 		ar934x_nfc_free_buf(nfc);
 		free_irq(nfc->irq, nfc);
 	}

@@ -1,10 +1,11 @@
 ARCH:=mips
 SUBTARGET:=xway
 BOARDNAME:=XWAY
-FEATURES:=squashfs atm nand ramdisk
-CPU_TYPE:=24kc
+FEATURES:=squashfs atm mips16 nand ubifs ramdisk
+CPU_TYPE:=34kc
+CPU_SUBTYPE:=dsp
 
-DEFAULT_PACKAGES+=kmod-leds-gpio kmod-gpio-button-hotplug swconfig
+DEFAULT_PACKAGES+=kmod-leds-gpio kmod-gpio-button-hotplug atm-esi
 
 define Target/Description
 	Lantiq XWAY

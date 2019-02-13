@@ -10,35 +10,18 @@ PKG_NAME:=binutils
 PKG_VERSION:=$(call qstrip,$(CONFIG_BINUTILS_VERSION))
 BIN_VERSION:=$(PKG_VERSION)
 
-PKG_SOURCE_URL:=@GNU/binutils/
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-
-TAR_OPTIONS += --exclude='*.rej'
-
-ifeq ($(PKG_VERSION),2.29.1)
-  PKG_HASH:=e7010a46969f9d3e53b650a518663f98a5dde3c3ae21b7d71e5e6803bc36b577
-endif
-
-ifeq ($(PKG_VERSION),2.30)
-  PKG_HASH:=6e46b8aeae2f727a36f0bd9505e405768a72218f1796f0d09757d45209871ae6
-endif
-
-ifeq ($(PKG_VERSION),2.31.1)
-  PKG_HASH:=5d20086ecf5752cc7d9134246e9588fa201740d540f7eb84d795b1f7a93bca86
-endif
-
-ifneq ($(CONFIG_BINUTILS_VERSION_2_29_ARC),)
-  PKG_REV:=arc-2017.09-release
-  PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils-gdb/archive/$(PKG_REV)/
-  PKG_SOURCE:=$(PKG_NAME)-$(PKG_REV).tar.gz
-  PKG_HASH:=2ea086fd5521e942926dd6ff6922ce31c29ee7ffc754fca3d06385e0f27600f8
-  BINUTILS_DIR:=$(PKG_NAME)-gdb-$(PKG_REV)
-  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
-endif
+PKG_SOURCE_URL:=https://releases.linaro.org/14.09/components/toolchain/binutils-linaro/
+PKG_REV:=2.24.0-2014.09
+PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.xz
+PKG_MD5SUM:=8f9b2b2e049d59b1b86ce9657802a353
+BINUTILS_DIR:=$(PKG_NAME)-linaro-$(PKG_REV)
+HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
 
 HOST_BUILD_PARALLEL:=1
 
 PATCH_DIR:=./patches/$(PKG_VERSION)
+
+REAL_STAGING_DIR_HOST:=$(STAGING_DIR_HOST)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
@@ -49,13 +32,10 @@ BINUTILS_CONFIGURE:= \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
 		--with-sysroot=$(TOOLCHAIN_DIR) \
-		--enable-deterministic-archives \
 		--enable-plugins \
 		--disable-multilib \
 		--disable-werror \
 		--disable-nls \
-		--disable-sim \
-		--disable-gdb \
 		$(GRAPHITE_CONFIGURE) \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS)) 
@@ -100,13 +80,7 @@ define Host/Install
 		install
 	$(call FixupLibdir,$(TOOLCHAIN_DIR)/initial)
 	$(RM) $(TOOLCHAIN_DIR)/initial/lib/libiberty.a
-	$(CP) $(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-readelf $(HOST_BUILD_PREFIX)/bin/readelf
-	# ARC gcc requires extlib.
-	# If extlib is not available in "initial" folder
-	# initial gcc will fail to build libc.
-	if [ -d $(TOOLCHAIN_DIR)/extlib ]; then \
-		$(CP) -r $(TOOLCHAIN_DIR)/extlib $(TOOLCHAIN_DIR)/initial/; \
-	fi
+	$(CP) $(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-readelf $(REAL_STAGING_DIR_HOST)/bin/readelf
 endef
 
 define Host/Clean

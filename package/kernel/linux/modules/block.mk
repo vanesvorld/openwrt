@@ -25,12 +25,9 @@ $(eval $(call KernelPackage,aoe))
 define KernelPackage/ata-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Serial and Parallel ATA support
-  DEPENDS:=@PCI_SUPPORT||TARGET_sunxi +kmod-scsi-core
+  DEPENDS:=@PCI_SUPPORT +kmod-scsi-core
   KCONFIG:=CONFIG_ATA
   FILES:=$(LINUX_DIR)/drivers/ata/libata.ko
-ifneq ($(wildcard $(LINUX_DIR)/drivers/ata/libahci.ko),)
-  FILES+=$(LINUX_DIR)/drivers/ata/libahci.ko
-endif
 endef
 
 $(eval $(call KernelPackage,ata-core))
@@ -46,7 +43,8 @@ define KernelPackage/ata-ahci
   TITLE:=AHCI Serial ATA support
   KCONFIG:=CONFIG_SATA_AHCI
   FILES:= \
-    $(LINUX_DIR)/drivers/ata/ahci.ko
+    $(LINUX_DIR)/drivers/ata/ahci.ko \
+    $(LINUX_DIR)/drivers/ata/libahci.ko
   AUTOLOAD:=$(call AutoLoad,41,libahci ahci,1)
   $(call AddDepends/ata)
 endef
@@ -64,8 +62,8 @@ define KernelPackage/ata-ahci-platform
   FILES:= \
     $(LINUX_DIR)/drivers/ata/ahci_platform.ko \
     $(LINUX_DIR)/drivers/ata/libahci_platform.ko
-  AUTOLOAD:=$(call AutoLoad,40,libahci libahci_platform ahci_platform,1)
-  $(call AddDepends/ata,@TARGET_ipq806x||TARGET_sunxi)
+  AUTOLOAD:=$(call AutoLoad,40,libahci_platform ahci_platform,1)
+  $(call AddDepends/ata,@TARGET_ipq806x||TARGET_mvebu +kmod-ata-ahci)
 endef
 
 define KernelPackage/ata-ahci-platform/description
@@ -90,6 +88,25 @@ endef
 $(eval $(call KernelPackage,ata-artop))
 
 
+define KernelPackage/ata-imx
+  TITLE:=Freescale i.MX AHCI SATA support
+  DEPENDS:=@TARGET_imx6
+  KCONFIG:=\
+	CONFIG_AHCI_IMX \
+	CONFIG_SATA_AHCI_PLATFORM \
+	CONFIG_PATA_IMX=n
+  FILES:=$(LINUX_DIR)/drivers/ata/ahci_imx.ko
+  AUTOLOAD:=$(call AutoLoad,41,ahci_imx,1)
+  $(call AddDepends/ata)
+endef
+
+define KernelPackage/ata-imx/description
+ SATA support for the Freescale i.MX6 SoC's onboard AHCI SATA
+endef
+
+$(eval $(call KernelPackage,ata-imx))
+
+
 define KernelPackage/ata-marvell-sata
   TITLE:=Marvell Serial ATA support
   KCONFIG:=CONFIG_SATA_MV
@@ -105,6 +122,22 @@ endef
 $(eval $(call KernelPackage,ata-marvell-sata))
 
 
+define KernelPackage/ata-mvebu-ahci
+  TITLE:=Marvell EBU AHCI support
+  DEPENDS:=@TARGET_mvebu +kmod-ata-ahci-platform
+  KCONFIG:=CONFIG_AHCI_MVEBU
+  FILES:=$(LINUX_DIR)/drivers/ata/ahci_mvebu.ko
+  AUTOLOAD:=$(call AutoLoad,41,ahci_mvebu,1)
+  $(call AddDepends/ata)
+endef
+
+define KernelPackage/ata-mvebu-ahci/description
+ AHCI support for Marvell EBU SoCs
+endef
+
+$(eval $(call KernelPackage,ata-mvebu-ahci))
+
+
 define KernelPackage/ata-nvidia-sata
   TITLE:=Nvidia Serial ATA support
   KCONFIG:=CONFIG_SATA_NV
@@ -114,6 +147,22 @@ define KernelPackage/ata-nvidia-sata
 endef
 
 $(eval $(call KernelPackage,ata-nvidia-sata))
+
+
+define KernelPackage/ata-oxnas-sata
+  TITLE:=oxnas Serial ATA support
+  KCONFIG:=CONFIG_SATA_OXNAS
+  DEPENDS:=@TARGET_oxnas
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_oxnas.ko
+  AUTOLOAD:=$(call AutoLoad,41,sata_oxnas,1)
+  $(call AddDepends/ata)
+endef
+
+define KernelPackage/ata-oxnas-sata/description
+ SATA support for OX934 core found in the OX82x/PLX782x SoCs
+endef
+
+$(eval $(call KernelPackage,ata-oxnas-sata))
 
 
 define KernelPackage/ata-pdc202xx-old
@@ -206,21 +255,10 @@ endef
 $(eval $(call KernelPackage,block2mtd))
 
 
-define KernelPackage/dax
-  SUBMENU:=$(BLOCK_MENU)
-  TITLE:=DAX: direct access to differentiated memory
-  DEPENDS:=@!LINUX_3_18 @!LINUX_4_9
-  KCONFIG:=CONFIG_DAX
-  FILES:=$(LINUX_DIR)/drivers/dax/dax.ko
-endef
-
-$(eval $(call KernelPackage,dax))
-
-
 define KernelPackage/dm
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper
-  DEPENDS:=+kmod-crypto-manager +!(LINUX_3_18||LINUX_4_9):kmod-dax
+  DEPENDS:=+kmod-crypto-manager
   # All the "=n" are unnecessary, they're only there
   # to stop the config from asking the question.
   # MIRROR is M because I've needed it for pvmove.
@@ -229,8 +267,6 @@ define KernelPackage/dm
 	CONFIG_DM_DEBUG=n \
 	CONFIG_DM_UEVENT=n \
 	CONFIG_DM_DELAY=n \
-	CONFIG_DM_LOG_WRITES=n \
-	CONFIG_DM_MQ_DEFAULT=n \
 	CONFIG_DM_MULTIPATH=n \
 	CONFIG_DM_ZERO=n \
 	CONFIG_DM_SNAPSHOT=n \
@@ -337,7 +373,7 @@ $(eval $(call KernelPackage,md-raid10))
 
 
 define KernelPackage/md-raid456
-$(call KernelPackage/md/Depends,+kmod-lib-raid6 +kmod-lib-xor +!LINUX_3_18:kmod-lib-crc32c)
+$(call KernelPackage/md/Depends,+kmod-lib-raid6 +kmod-lib-xor)
   TITLE:=RAID Level 456 Driver
   KCONFIG:= \
        CONFIG_ASYNC_CORE \
@@ -388,6 +424,115 @@ define KernelPackage/md-multipath/description
 endef
 
 $(eval $(call KernelPackage,md-multipath))
+
+
+define KernelPackage/ide-core
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=IDE (ATA/ATAPI) device support
+  DEPENDS:=@PCI_SUPPORT
+  KCONFIG:= \
+	CONFIG_IDE \
+	CONFIG_BLK_DEV_IDE \
+	CONFIG_BLK_DEV_IDEDISK \
+	CONFIG_IDE_GD \
+	CONFIG_IDE_GD_ATA=y \
+	CONFIG_IDE_GD_ATAPI=n \
+	CONFIG_IDEPCI_PCIBUS_ORDER=y \
+	CONFIG_BLK_DEV_IDEDMA_PCI=y \
+	CONFIG_BLK_DEV_IDEPCI=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/ide/ide-core.ko \
+	$(LINUX_DIR)/drivers/ide/ide-gd_mod.ko
+endef
+
+define KernelPackage/ide-core/description
+ Kernel support for IDE, useful for usb mass storage devices (e.g. on WL-HDD)
+ Includes:
+ - ide-core
+ - ide-gd_mod
+endef
+
+$(eval $(call KernelPackage,ide-core))
+
+
+define AddDepends/ide
+  SUBMENU:=$(BLOCK_MENU)
+  DEPENDS+=kmod-ide-core $(1)
+endef
+
+
+define KernelPackage/ide-generic
+  SUBMENU:=$(BLOCK_MENU)
+  DEPENDS:=@PCI_SUPPORT
+  TITLE:=Kernel support for generic PCI IDE chipsets
+  KCONFIG:=CONFIG_BLK_DEV_GENERIC
+  FILES:=$(LINUX_DIR)/drivers/ide/ide-pci-generic.ko
+  AUTOLOAD:=$(call AutoLoad,30,ide-pci-generic,1)
+  $(call AddDepends/ide)
+endef
+
+$(eval $(call KernelPackage,ide-generic))
+
+
+define KernelPackage/ide-generic-old
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for generic (legacy) IDE chipsets
+  KCONFIG:=CONFIG_IDE_GENERIC
+  FILES:=$(LINUX_DIR)/drivers/ide/ide-generic.ko
+  AUTOLOAD:=$(call AutoLoad,30,ide-generic,1)
+  $(call AddDepends/ide)
+endef
+
+$(eval $(call KernelPackage,ide-generic-old))
+
+
+define KernelPackage/ide-aec62xx
+  TITLE:=Acard AEC62xx IDE driver
+  DEPENDS:=@PCI_SUPPORT
+  KCONFIG:=CONFIG_BLK_DEV_AEC62XX
+  FILES:=$(LINUX_DIR)/drivers/ide/aec62xx.ko
+  AUTOLOAD:=$(call AutoLoad,30,aec62xx,1)
+  $(call AddDepends/ide)
+endef
+
+define KernelPackage/ide-aec62xx/description
+ Support for Acard AEC62xx (Artop ATP8xx) IDE controllers
+endef
+
+$(eval $(call KernelPackage,ide-aec62xx,1))
+
+
+define KernelPackage/ide-pdc202xx
+  TITLE:=Promise PDC202xx IDE driver
+  DEPENDS:=@PCI_SUPPORT
+  KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
+  FILES:=$(LINUX_DIR)/drivers/ide/pdc202xx_old.ko
+  AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old,1)
+  $(call AddDepends/ide)
+endef
+
+define KernelPackage/ide-pdc202xx/description
+ Support for the Promise Ultra 33/66/100 (PDC202{46|62|65|67|68}) IDE
+ controllers.
+endef
+
+$(eval $(call KernelPackage,ide-pdc202xx))
+
+
+define KernelPackage/ide-it821x
+  TITLE:=ITE IT821x IDE driver
+  DEPENDS:=@PCI_SUPPORT
+  KCONFIG:=CONFIG_BLK_DEV_IT821X
+  FILES=$(LINUX_DIR)/drivers/ide/it821x.ko
+  AUTOLOAD:=$(call AutoLoad,30,it821x,1)
+  $(call AddDepends/ide)
+endef
+
+define KernelPackage/ide-it821x/description
+ Kernel module for the ITE IDE821x IDE controllers
+endef
+
+$(eval $(call KernelPackage,ide-it821x))
 
 
 define KernelPackage/libsas
@@ -505,17 +650,3 @@ define KernelPackage/scsi-cdrom
 endef
 
 $(eval $(call KernelPackage,scsi-cdrom))
-
-
-define KernelPackage/scsi-tape
-  SUBMENU:=$(BLOCK_MENU)
-  TITLE:=Kernel support for scsi tape drives
-  DEPENDS:=+kmod-scsi-core
-  KCONFIG:= \
-    CONFIG_CHR_DEV_ST
-  FILES:= \
-    $(LINUX_DIR)/drivers/scsi/st.ko
-  AUTOLOAD:=$(call AutoLoad,45,st)
-endef
-
-$(eval $(call KernelPackage,scsi-tape))

@@ -1,7 +1,7 @@
 /*
  *  Buffalo WZR-HP-G300NH2 board support
  *
- *  Copyright (C) 2011 Felix Fietkau <nbd@nbd.name>
+ *  Copyright (C) 2011 Felix Fietkau <nbd@openwrt.org>
  *  Copyright (C) 2011 Mark Deneen <mdeneen@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -72,11 +72,6 @@ static struct gpio_led wzrhpg300nh2_wmac_leds_gpio[] = {
 	{
 		.name           = "buffalo:blue:usb",
 		.gpio           = 4,
-		.active_low     = 1,
-	},
-	{
-		.name           = "buffalo:green:wireless",
-		.gpio           = 5,
 		.active_low     = 1,
 	},
 	{
@@ -164,6 +159,7 @@ static void __init wzrhpg300nh2_setup(void)
 	ath79_register_gpio_keys_polled(-1, WZRHPG300NH2_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(wzrhpg300nh2_gpio_keys),
 					wzrhpg300nh2_gpio_keys);
+	ap9x_pci_setup_wmac_led_pin(0, 5);
 	ap9x_pci_setup_wmac_leds(0, wzrhpg300nh2_wmac_leds_gpio,
 				ARRAY_SIZE(wzrhpg300nh2_wmac_leds_gpio));
 

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016 OpenWrt.org
+# Copyright (C) 2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,8 +10,8 @@ define KernelPackage/rtc-sunxi
     DEPENDS:=@TARGET_sunxi
     $(call AddDepends/rtc)
     KCONFIG:= \
-	CONFIG_RTC_DRV_SUNXI \
-	CONFIG_RTC_CLASS=y
+	CONFIG_RTC_CLASS=y \
+	CONFIG_RTC_DRV_SUNXI=m
     FILES:=$(LINUX_DIR)/drivers/rtc/rtc-sunxi.ko
     AUTOLOAD:=$(call AutoLoad,50,rtc-sunxi)
 endef
@@ -42,11 +42,29 @@ endef
 
 $(eval $(call KernelPackage,sunxi-ir))
 
+define KernelPackage/eeprom-sunxi
+    SUBMENU:=$(OTHER_MENU)
+    TITLE:=AllWinner Security ID fuse support
+    DEPENDS:=@TARGET_sunxi
+    KCONFIG:= \
+	CONFIG_EEPROM_SUNXI_SID
+    FILES:=$(LINUX_DIR)/drivers/misc/eeprom/sunxi_sid.ko
+    AUTOLOAD:=$(call AutoLoad,50,sunxi_sid)
+endef
+
+define KernelPackage/eeprom-sunxi/description
+ Support for the AllWinner Security ID fuse support
+endef
+
+$(eval $(call KernelPackage,eeprom-sunxi))
+
 define KernelPackage/ata-sunxi
     TITLE:=AllWinner sunXi AHCI SATA support
     SUBMENU:=$(BLOCK_MENU)
-    DEPENDS:=@TARGET_sunxi +kmod-ata-ahci-platform +kmod-scsi-core
-    KCONFIG:=CONFIG_AHCI_SUNXI
+    DEPENDS:=@TARGET_sunxi +kmod-scsi-core
+    KCONFIG:=\
+	CONFIG_AHCI_SUNXI \
+	CONFIG_SATA_AHCI_PLATFORM
     FILES:=$(LINUX_DIR)/drivers/ata/ahci_sunxi.ko
     AUTOLOAD:=$(call AutoLoad,41,ahci_sunxi,1)
 endef
@@ -60,7 +78,7 @@ $(eval $(call KernelPackage,ata-sunxi))
 define KernelPackage/sun4i-emac
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=AllWinner EMAC Ethernet support
-  DEPENDS:=@TARGET_sunxi +kmod-of-mdio +kmod-libphy
+  DEPENDS:=@TARGET_sunxi
   KCONFIG:=CONFIG_SUN4I_EMAC
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/allwinner/sun4i-emac.ko
   AUTOLOAD:=$(call AutoProbe,sun4i-emac)
@@ -69,17 +87,18 @@ endef
 $(eval $(call KernelPackage,sun4i-emac))
 
 
-define KernelPackage/sound-soc-sunxi
-  TITLE:=AllWinner built-in SoC sound support
-  KCONFIG:=CONFIG_SND_SUN4I_CODEC
-  FILES:=$(LINUX_DIR)/sound/soc/sunxi/sun4i-codec.ko
-  AUTOLOAD:=$(call AutoLoad,65,sun4i-codec)
-  DEPENDS:=@TARGET_sunxi +kmod-sound-soc-core
-  $(call AddDepends/sound)
+define KernelPackage/wdt-sunxi
+    SUBMENU:=$(OTHER_MENU)
+    TITLE:=AllWinner sunXi Watchdog timer
+    DEPENDS:=@TARGET_sunxi
+    KCONFIG:=CONFIG_SUNXI_WATCHDOG
+    FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/sunxi_wdt.ko
+    AUTOLOAD:=$(call AutoLoad,51,sunxi_wdt)
 endef
 
-define KernelPackage/sound-soc-sunxi/description
-  Kernel support for AllWinner built-in SoC audio
+define KernelPackage/wdt-sunxi/description
+    Kernel module for AllWinner sunXi watchdog timer.
 endef
 
-$(eval $(call KernelPackage,sound-soc-sunxi))
+$(eval $(call KernelPackage,wdt-sunxi))
+

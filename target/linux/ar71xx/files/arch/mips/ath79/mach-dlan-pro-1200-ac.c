@@ -109,7 +109,6 @@ static struct ar8327_pad_cfg dlan_pro_1200_ac_ar8327_pad0_cfg = {
 	.rxclk_delay_en = false,
 	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
 	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL0,
-	.mac06_exchange_dis = true,
 };
 
 static struct ar8327_pad_cfg dlan_pro_1200_ac_ar8327_pad5_cfg = {
@@ -135,7 +134,7 @@ static struct ar8327_platform_data dlan_pro_1200_ac_ar8327_data = {
 static struct mdio_board_info dlan_pro_1200_ac_mdio0_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
-		.mdio_addr = 0,
+		.phy_addr = 0,
 		.platform_data = &dlan_pro_1200_ac_ar8327_data,
 	},
 };

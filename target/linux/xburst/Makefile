@@ -9,17 +9,17 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=xburst
 BOARDNAME:=Ingenic XBurst
-FEATURES:=targz nand ubifs audio source-only
+FEATURES:=targz nand ubifs audio
 SUBTARGETS:=qi_lb60
 
 KERNEL_PATCHVER:=3.18
 
-DEVICE_TYPE:=other
+DEVICE_TYPE=other
+
+include $(INCLUDE_DIR)/target.mk
 
 define Target/Description
 	Build firmware images for XBurst JZ47x0 based boards.
 endef
-
-include $(INCLUDE_DIR)/target.mk
 
 $(eval $(call BuildTarget))

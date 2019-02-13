@@ -73,10 +73,9 @@ static unsigned long lzma_outsize;
 static unsigned long kernel_la;
 
 #ifdef CONFIG_KERNEL_CMDLINE
-#define kernel_argc	2
+#define kernel_argc	1
 static const char kernel_cmdline[] = CONFIG_KERNEL_CMDLINE;
-static const char *const kernel_argv[] = {
-	NULL,
+static const char *kernel_argv[] = {
 	kernel_cmdline,
 	NULL,
 };

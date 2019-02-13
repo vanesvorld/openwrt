@@ -11,9 +11,7 @@
 
 #ifndef NETLINK_LOCAL_H_
 #define NETLINK_LOCAL_H_
-#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#endif
 
 #include <stdio.h>
 #include <errno.h>

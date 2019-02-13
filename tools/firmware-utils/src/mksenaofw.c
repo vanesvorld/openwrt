@@ -385,36 +385,33 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* Check required arguments */
-	if (mode == NONE) {
-		fprintf(stderr, "A mode must be defined\n");
-		usage(progname, EXIT_FAILURE);
-	}
-
-	if (input_file == NULL || output_file == NULL) {
-		fprintf(stderr, "Input and output files must be defined\n");
-		usage(progname, EXIT_FAILURE);
-	}
-
-	if (mode == DECODE) {
-		if (decode_image(input_file, output_file) < 0)
-				return EXIT_FAILURE;
-
-		return EXIT_SUCCESS;
-	}
-
+	/* Check required arguments*/
 	if (header.firmware_type == 0) {
 		fprintf(stderr, "Firmware type must be defined\n");
 		usage(progname, EXIT_FAILURE);
-	}
-
-	if (header.vendor_id == 0 || header.product_id == 0) {
+	} else if (input_file == 0 || output_file == 0) {
+		fprintf(stderr, "Input and output files must be defined\n");
+		usage(progname, EXIT_FAILURE);
+	} else if (header.vendor_id == 0 || header.product_id == 0) {
 		fprintf(stderr, "Vendor ID and Product ID must be defined and non-zero\n");
 		usage(progname, EXIT_FAILURE);
 	}
 
-	if (encode_image(input_file, output_file, &header, pad ? block_size : 0) < 0)
-		return EXIT_FAILURE;
+	switch (mode) {
+	case NONE:
+		fprintf(stderr, "A mode must be defined\n");
+		usage(progname, EXIT_FAILURE);
+		break;
+	case ENCODE:
+		if (encode_image(input_file, output_file, &header, pad ? block_size : 0)
+				< 0)
+			return EXIT_FAILURE;
+		break;
+	case DECODE:
+		if (decode_image(input_file, output_file) < 0)
+			return EXIT_FAILURE;
+		break;
+	}
 
 	return EXIT_SUCCESS;
 }

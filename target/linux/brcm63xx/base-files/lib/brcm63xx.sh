@@ -18,12 +18,6 @@ brcm63xx_dt_detect() {
 	"ADB P.DG A4001N1")
 		board_name="a4001n1"
 		;;
-	"ADB P.DG AV4202N")
-		board_name="av4202n"
-		;;
-	"Actiontec R1000H")
-		board_name="r1000h"
-		;;
 	"Alcatel RG100A")
 		board_name="rg100a"
 		;;
@@ -87,9 +81,6 @@ brcm63xx_dt_detect() {
 	"BT Voyager V2500V")
 		board_name="v2500v_bb"
 		;;
-	"Comtrend AR-5315u")
-		board_name="ar-5315u"
-		;;
 	"Comtrend AR-5381u")
 		board_name="ar-5381u"
 		;;
@@ -110,9 +101,6 @@ brcm63xx_dt_detect() {
 		;;
 	"Comtrend VR-3025un")
 		board_name="vr-3025un"
-		;;
-	"Comtrend VR-3026e")
-		board_name="vr-3026e"
 		;;
 	"Comtrend WAP-5813n")
 		board_name="wap-5813n"
@@ -168,9 +156,6 @@ brcm63xx_dt_detect() {
 	"Huawei EchoLife HG556a (version C)")
 		board_name="hg556a_c"
 		;;
-	"Huawei HG622")
-		board_name="hg622"
-		;;
 	"Huawei HG655b")
 		board_name="hg655b"
 		;;
@@ -191,15 +176,6 @@ brcm63xx_dt_detect() {
 		;;
 	"Netgear DGND3700v1/DGND3800B")
 		board_name="dgnd3700v1_dgnd3800b"
-		;;
-	"Netgear EVG2000")
-		board_name="evg2000"
-		;;
-	"NuCom R5010UN v2")
-		board_name="r5010un_v2"
-		;;
-	"Observa VH4032N")
-		board_name="vh4032n"
 		;;
 	"Pirelli A226G")
 		board_name="a226g"
@@ -222,23 +198,14 @@ brcm63xx_dt_detect() {
 	"Sagem F@ST2604")
 		board_name="fast2604"
 		;;
-	"Sagem F@ST2704N")
-		board_name="fast2704n"
-		;;
 	"Sagem F@ST2704V2")
 		board_name="fast2704v2"
-		;;
-	"Sercomm AD1018 (SPI flash mod)")
-		board_name="ad1018-nor"
 		;;
 	"SFR Neuf Box 4"*)
 		board_name="neufbox4"
 		;;
 	"SFR neufbox 6 (Sercomm)")
 		board_name="neufbox6"
-		;;
-	"SKY SR102")
-		board_name="sr102"
 		;;
 	"T-Com Speedport W303 V")
 		board_name="spw303v"
@@ -252,7 +219,7 @@ brcm63xx_dt_detect() {
 	"TECOM GW6200")
 		board_name="g6200"
 		;;
-	"Telsey CPVA502+")
+	"Telsey CVPA502+")
 		board_name="cpva502p"
 		;;
 	"Telsey CPVA642-type (CPA-ZNTE60T)")
@@ -307,4 +274,13 @@ brcm63xx_detect() {
 
 	echo "$board_name" > /tmp/sysinfo/board_name
 	echo "$model" > /tmp/sysinfo/model
+}
+
+brcm63xx_board_name() {
+	local name
+
+	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
+	[ -n "$name" ] || name="unknown"
+
+	echo $name
 }

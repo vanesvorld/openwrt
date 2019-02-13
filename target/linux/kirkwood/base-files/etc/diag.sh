@@ -1,36 +1,19 @@
 #!/bin/sh
 # Copyright (C) 2014 OpenWrt.org
 
-. /lib/functions.sh
 . /lib/functions/leds.sh
+. /lib/kirkwood.sh
 
 get_status_led() {
-	case $(board_name) in
-	cisco,on100)
-		status_led="on100:green:health"
-		;;
-	cloudengines,pogoe02)
-		status_led="pogo_e02:orange:fault"
-		;;
-	cloudengines,pogoplugv4)
-		status_led="pogoplugv4:green:health"
-		;;
-	iom,ix2-200)
-		status_led="status:white:power_led"
-		;;
-	linksys,audi)
-		status_led="audi:green:power"
-		;;
-	linksys,viper)
-		status_led="viper:white:health"
-		;;
-	seagate,dockstar|\
-	seagate,goflexhome|\
-	seagate,goflexnet)
+	case $(kirkwood_board_name) in
+	dockstar|\
+	goflexhome|\
+	goflexnet|\
+	pogo_e02)
 		status_led="status:orange:fault"
 		;;
-	zyxel,nsa310b)
-		status_led="nsa310:green:sys"
+	ea4500)
+		status_led="ea4500:white:health"
 		;;
 	esac
 }

@@ -9,12 +9,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libroxml
 PKG_VERSION:=2.3.0
-PKG_RELEASE:=3
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://download.libroxml.net/pool/v2.x
-PKG_HASH:=1da8f20b530eba4409f2b217587d2f1281ff5d9ba45b24aeac71b94c6c621b78
-PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_MD5SUM:=a975f91be150f7a19168a45ce15769ca
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
@@ -27,7 +27,6 @@ define Package/libroxml
   CATEGORY:=Libraries
   TITLE:=Minimum, easy-to-use, C implementation for xml file parsing
   URL:=http://www.libroxml.net/
-  ABI_VERSION:=0
 endef
 
 CONFIGURE_ARGS += \

@@ -139,10 +139,10 @@ static int cns3xxx_gpio_to_irq(struct gpio_chip *chip, unsigned pin)
 /* one interrupt per GPIO controller (GPIOA/GPIOB)
  * this is called in task context, with IRQs enabled
  */
-static void cns3xxx_gpio_irq_handler(struct irq_desc *desc)
+static void cns3xxx_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
 {
-	struct cns3xxx_gpio_chip *cchip = irq_desc_get_handler_data(desc);
-	struct irq_chip *chip = irq_desc_get_chip(desc);
+	struct cns3xxx_gpio_chip *cchip = irq_get_handler_data(irq);
+	struct irq_chip *chip = irq_get_chip(irq);
 	u16 i;
 	u32 reg;
 
@@ -211,9 +211,9 @@ static int cns3xxx_gpio_irq_set_type(struct irq_data *d, u32 irqtype)
 	spin_unlock_irqrestore(&cchip->lock, flags);
 
 	if (type & (IRQ_TYPE_LEVEL_LOW | IRQ_TYPE_LEVEL_HIGH))
-		irq_set_handler_locked(d, handle_level_irq);
+		__irq_set_handler_locked(d->irq, handle_level_irq);
 	else if (type & (IRQ_TYPE_EDGE_FALLING | IRQ_TYPE_EDGE_RISING))
-		irq_set_handler_locked(d, handle_edge_irq);
+		__irq_set_handler_locked(d->irq, handle_edge_irq);
 
 	return 0;
 }
@@ -273,10 +273,10 @@ void __init cns3xxx_gpio_init(int gpio_base, int ngpio,
 	ct = gc->chip_types;
 	ct->type = IRQ_TYPE_EDGE_FALLING;
 	ct->regs.ack = GPIO_INTERRUPT_CLEAR;
+	ct->regs.enable = GPIO_INTERRUPT_ENABLE;
 	ct->chip.irq_ack = irq_gc_ack_set_bit;
-	ct->regs.mask = GPIO_INTERRUPT_ENABLE;
-	ct->chip.irq_enable = irq_gc_mask_set_bit;
-	ct->chip.irq_disable = irq_gc_mask_clr_bit;
+	ct->chip.irq_enable = irq_gc_unmask_enable_reg;
+	ct->chip.irq_disable = irq_gc_mask_disable_reg;
 	ct->chip.irq_set_type = cns3xxx_gpio_irq_set_type;
 	ct->handler = handle_edge_irq;
 

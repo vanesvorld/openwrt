@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2015 Jo-Philipp Wich <jo@mein.io>
+# Copyright (C) 2010-2015 Jo-Philipp Wich <jow@openwrt.org>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,22 +8,21 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uhttpd
-PKG_RELEASE:=2
+PKG_VERSION:=2015-11-08
+PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=$(PROJECT_GIT)/project/uhttpd.git
-PKG_SOURCE_DATE:=2018-11-28
-PKG_SOURCE_VERSION:=cdfc902a4cb77bc538a729f9e1c8a8578454a0e5
-PKG_MIRROR_HASH:=6b21111547a4453355bd6c941a47f0116a652a77d87c1e05a035168b8ab2aa6f
-PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_SOURCE_URL:=git://nbd.name/uhttpd2.git
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=fe01ef3f52adae9da38ef47926cd50974af5d6b7
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=ISC
 
 PKG_BUILD_DEPENDS = ustream-ssl
-PKG_CONFIG_DEPENDS:= CONFIG_uhttpd_lua
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
-include $(INCLUDE_DIR)/version.mk
 
 define Package/uhttpd/default
   SECTION:=net
@@ -44,10 +43,40 @@ define Package/uhttpd/description
 endef
 
 define Package/uhttpd/config
-  config uhttpd_lua
-    depends on PACKAGE_uhttpd-mod-lua
-    bool "Enable Integrated Lua interpreter"
-	default y
+  config PACKAGE_uhttpd_debug
+    bool "Build with debug messages"
+    default n
+endef
+
+
+define Package/uhttpd-mod-tls
+  $(Package/uhttpd/default)
+  TITLE+= (TLS plugin)
+  DEPENDS:=uhttpd \
+	+PACKAGE_uhttpd-mod-tls_polarssl:libustream-polarssl \
+	+PACKAGE_uhttpd-mod-tls_cyassl:libustream-cyassl \
+	+PACKAGE_uhttpd-mod-tls_openssl:libustream-openssl
+endef
+
+define Package/uhttpd-mod-tls/description
+ The TLS plugin adds HTTPS support to uHTTPd.
+endef
+
+define Package/uhttpd-mod-tls/config
+  choice
+    depends on PACKAGE_uhttpd-mod-tls
+    prompt "TLS Provider"
+    default PACKAGE_uhttpd-mod-tls_polarssl
+
+    config PACKAGE_uhttpd-mod-tls_polarssl
+      bool "PolarSSL"
+
+    config PACKAGE_uhttpd-mod-tls_cyassl
+      bool "CyaSSL"
+
+    config PACKAGE_uhttpd-mod-tls_openssl
+      bool "OpenSSL"
+  endchoice
 endef
 
 define Package/uhttpd-mod-lua
@@ -91,9 +120,12 @@ define Package/uhttpd/install
 	$(INSTALL_BIN) ./files/uhttpd.init $(1)/etc/init.d/uhttpd
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/uhttpd.config $(1)/etc/config/uhttpd
-	$(VERSION_SED_SCRIPT) $(1)/etc/config/uhttpd
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uhttpd $(1)/usr/sbin/uhttpd
+endef
+
+define Package/uhttpd-mod-tls/install
+	true
 endef
 
 define Package/uhttpd-mod-lua/install
@@ -109,5 +141,6 @@ endef
 
 
 $(eval $(call BuildPackage,uhttpd))
+$(eval $(call BuildPackage,uhttpd-mod-tls))
 $(eval $(call BuildPackage,uhttpd-mod-lua))
 $(eval $(call BuildPackage,uhttpd-mod-ubus))

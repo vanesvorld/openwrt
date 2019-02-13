@@ -8,15 +8,10 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/spinlock.h>
 #include <linux/module.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
 #include <linux/mtd/nand.h>
-#else
-#include <linux/mtd/rawnand.h>
-#endif
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/platform_device.h>
@@ -44,9 +39,7 @@
 
 struct rb91x_nand_info {
 	struct nand_chip chip;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
 	struct mtd_info mtd;
-#endif
 	struct device *dev;
 
 	int gpio_nce;
@@ -60,26 +53,9 @@ struct rb91x_nand_info {
 
 static inline struct rb91x_nand_info *mtd_to_rbinfo(struct mtd_info *mtd)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
 	return container_of(mtd, struct rb91x_nand_info, mtd);
-#else
-	struct nand_chip *chip = mtd_to_nand(mtd);
-
-	return container_of(chip, struct rb91x_nand_info, chip);
-#endif
 }
 
-static struct mtd_info *rbinfo_to_mtd(struct rb91x_nand_info *nfc)
-{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
-	return &nfc->mtd;
-#else
-	return nand_to_mtd(&nfc->chip);
-#endif
-}
-
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
 /*
  * We need to use the OLD Yaffs-1 OOB layout, otherwise the RB bootloader
  * will not be able to find the kernel that we load.
@@ -90,56 +66,6 @@ static struct nand_ecclayout rb91x_nand_ecclayout = {
 	.oobavail	= 9,
 	.oobfree	= { { 0, 4 }, { 6, 2 }, { 11, 2 }, { 4, 1 } }
 };
-
-#else
-
-static int rb91x_ooblayout_ecc(struct mtd_info *mtd, int section,
-			       struct mtd_oob_region *oobregion)
-{
-	switch (section) {
-	case 0:
-		oobregion->offset = 8;
-		oobregion->length = 3;
-		return 0;
-	case 1:
-		oobregion->offset = 13;
-		oobregion->length = 3;
-		return 0;
-	default:
-		return -ERANGE;
-	}
-}
-
-static int rb91x_ooblayout_free(struct mtd_info *mtd, int section,
-				struct mtd_oob_region *oobregion)
-{
-	switch (section) {
-	case 0:
-		oobregion->offset = 0;
-		oobregion->length = 4;
-		return 0;
-	case 1:
-		oobregion->offset = 4;
-		oobregion->length = 1;
-		return 0;
-	case 2:
-		oobregion->offset = 6;
-		oobregion->length = 2;
-		return 0;
-	case 3:
-		oobregion->offset = 11;
-		oobregion->length = 2;
-		return 0;
-	default:
-		return -ERANGE;
-	}
-}
-
-static const struct mtd_ooblayout_ops rb91x_nand_ecclayout_ops = {
-	.ecc = rb91x_ooblayout_ecc,
-	.free = rb91x_ooblayout_free,
-};
-#endif /* < 4.6 */
 
 static struct mtd_partition rb91x_nand_partitions[] = {
 	{
@@ -152,7 +78,7 @@ static struct mtd_partition rb91x_nand_partitions[] = {
 		.offset	= (256 * 1024),
 		.size	= (4 * 1024 * 1024) - (256 * 1024),
 	}, {
-		.name	= "ubi",
+		.name	= "rootfs",
 		.offset	= MTDPART_OFS_NXTBLK,
 		.size	= MTDPART_SIZ_FULL,
 	},
@@ -362,7 +288,6 @@ static int rb91x_nand_probe(struct platform_device *pdev)
 {
 	struct rb91x_nand_info	*rbni;
 	struct rb91x_nand_platform_data *pdata;
-	struct mtd_info *mtd;
 	int ret;
 
 	pr_info(DRV_DESC "\n");
@@ -385,12 +310,8 @@ static int rb91x_nand_probe(struct platform_device *pdev)
 	rbni->gpio_nle = pdata->gpio_nle;
 
 	rbni->chip.priv	= &rbni;
-	mtd = rbinfo_to_mtd(rbni);
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
-	mtd->priv	= &rbni->chip;
-#endif
-	mtd->owner	= THIS_MODULE;
+	rbni->mtd.priv	= &rbni->chip;
+	rbni->mtd.owner	= THIS_MODULE;
 
 	rbni->chip.cmd_ctrl	= rb91x_nand_cmd_ctrl;
 	rbni->chip.dev_ready	= rb91x_nand_dev_ready;
@@ -400,10 +321,6 @@ static int rb91x_nand_probe(struct platform_device *pdev)
 
 	rbni->chip.chip_delay	= 25;
 	rbni->chip.ecc.mode	= NAND_ECC_SOFT;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0)
-	rbni->chip.ecc.algo = NAND_ECC_HAMMING;
-#endif
-	rbni->chip.options = NAND_NO_SUBPAGE_WRITE;
 
 	platform_set_drvdata(pdev, rbni);
 
@@ -411,22 +328,18 @@ static int rb91x_nand_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	ret = nand_scan_ident(mtd, 1, NULL);
+	ret = nand_scan_ident(&rbni->mtd, 1, NULL);
 	if (ret)
 		return ret;
 
-	if (mtd->writesize == 512)
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
+	if (rbni->mtd.writesize == 512)
 		rbni->chip.ecc.layout = &rb91x_nand_ecclayout;
-#else
-		mtd_set_ooblayout(mtd, &rb91x_nand_ecclayout_ops);
-#endif
 
-	ret = nand_scan_tail(mtd);
+	ret = nand_scan_tail(&rbni->mtd);
 	if (ret)
 		return ret;
 
-	ret = mtd_device_register(mtd, rb91x_nand_partitions,
+	ret = mtd_device_register(&rbni->mtd, rb91x_nand_partitions,
 				 ARRAY_SIZE(rb91x_nand_partitions));
 	if (ret)
 		goto err_release_nand;
@@ -434,7 +347,7 @@ static int rb91x_nand_probe(struct platform_device *pdev)
 	return 0;
 
 err_release_nand:
-	nand_release(mtd);
+	nand_release(&rbni->mtd);
 	return ret;
 }
 
@@ -442,7 +355,7 @@ static int rb91x_nand_remove(struct platform_device *pdev)
 {
 	struct rb91x_nand_info *info = platform_get_drvdata(pdev);
 
-	nand_release(rbinfo_to_mtd(info));
+	nand_release(&info->mtd);
 
 	return 0;
 }

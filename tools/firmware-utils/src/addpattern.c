@@ -58,7 +58,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -107,18 +106,18 @@ struct board_info {
 
 struct board_info boards[] = {
 	{
-		.id             = "E2100L",
-		.pattern        = "NL1X",
-		.hw_ver         = 0x00,
-		.sn             = 0x0f,
-		.flags          = {0x3f, 0x00},
-	},
-	{
 		.id		= "WRT160NL",
 		.pattern	= "NL16",
 		.hw_ver		= 0x00,
 		.sn		= 0x0f,
 		.flags		= {0x3f, 0x00},
+	},
+	{
+		.id             = "E2100L",
+		.pattern        = "NL1X",
+		.hw_ver         = 0x00,
+		.sn             = 0x0f,
+		.flags          = {0x3f, 0x00},
 	},
 	{
 		.id		= "mynet-rext",
@@ -140,20 +139,6 @@ void usage(void)
 {
 	fprintf(stderr, "Usage: addpattern [-i trxfile] [-o binfile] [-B board_id] [-p pattern] [-s serial] [-g] [-b] [-v v#.#.#] [-r #.#] [-{0|1|2|4|5}] -h\n");
 	exit(EXIT_FAILURE);
-}
-
-static time_t source_date_epoch = -1;
-static void set_source_date_epoch() {
-	char *env = getenv("SOURCE_DATE_EPOCH");
-	char *endptr = env;
-	errno = 0;
-        if (env && *env) {
-		source_date_epoch = strtoull(env, &endptr, 10);
-		if (errno || (endptr && *endptr != '\0')) {
-			fprintf(stderr, "Invalid SOURCE_DATE_EPOCH");
-			exit(1);
-		}
-        }
 }
 
 struct board_info *find_board(char *id)
@@ -288,10 +273,7 @@ int main(int argc, char **argv)
 		usage();
 	}
 
-	set_source_date_epoch();
-	if (source_date_epoch != -1) {
-		t = source_date_epoch;
-	} else if ((time(&t) == (time_t)(-1))) {
+	if (time(&t) == (time_t)(-1)) {
 		fprintf(stderr, "time call failed\n");
 		return EXIT_FAILURE;
 	}

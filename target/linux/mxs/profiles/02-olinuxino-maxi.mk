@@ -8,8 +8,10 @@
 define Profile/olinuxino-maxi
   NAME:=Olimex OLinuXino Maxi/Mini boards
   PACKAGES += imx-bootlets uboot-mxs-mx23_olinuxino \
-	  kmod-usb-net kmod-usb-net-smsc95xx kmod-gpio-mcp23s08 \
-	  kmod-leds-gpio kmod-ledtrig-heartbeat kmod-sound-core
+	  kmod-usb-mxs-phy kmod-usb-net kmod-usb-net-smsc95xx \
+	  kmod-gpio-mcp23s08 kmod-leds-gpio kmod-ledtrig-heartbeat kmod-rtc-stmp3xxx \
+	  kmod-sound-core kmod-sound-soc-mxs kmod-iio-mxs-lradc kmod-crypto-hw-dcp \
+	  kmod-i2c-mxs kmod-spi-mxs
 endef
 
 define Profile/olinuxino-maxi/Description

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # 
-# Copyright (C) 2006 Felix Fietkau <nbd@nbd.name>
+# Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.

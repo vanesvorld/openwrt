@@ -4,13 +4,21 @@
 . /lib/functions/leds.sh
 
 get_status_led() {
-	for led in dmz power diag wps; do
-		status_led_file=$(find /sys/class/leds/ -name "*${led}*" | head -n1)
-		if [ ! -f $status_led_file ]; then
-			status_led=$(basename $status_led_file)
-			return
-		fi;
-	done
+	status_led_file=$(find /sys/class/leds/ -name "*power*" |head -n1)
+	if [ ! -f $status_led_file ]; then
+		status_led=$(basename $status_led_file)
+		return
+	fi;
+	status_led_file=$(find /sys/class/leds/ -name "*diag*" |head -n1)
+	if [ ! -f $status_led_file ]; then
+		status_led=$(basename $status_led_file)
+		return
+	fi;
+	status_led_file=$(find /sys/class/leds/ -name "*wps*" |head -n1)
+	if [ ! -f $status_led_file ]; then
+		status_led=$(basename $status_led_file)
+		return
+	fi;
 }
 
 set_state() {

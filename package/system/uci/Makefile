@@ -1,6 +1,5 @@
 #
 # Copyright (C) 2008-2014 OpenWrt.org
-# Copyright (C) 2016 LEDE project
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,19 +7,24 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=uci
-PKG_RELEASE:=2
+UCI_VERSION=2015-08-27
+UCI_RELEASE=1
 
-PKG_SOURCE_URL=$(PROJECT_GIT)/project/uci.git
+PKG_NAME:=uci
+PKG_VERSION:=$(UCI_VERSION)$(if $(UCI_RELEASE),.$(UCI_RELEASE))
+PKG_RELEASE:=1
+PKG_REV:=2cd94fd505b293e657278e31deb32a7d66d20714
+
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=git://nbd.name/uci.git
+PKG_SOURCE_SUBDIR:=uci-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE=2018-08-11
-PKG_SOURCE_VERSION:=4c8b4d6efc8302b508d261573351fffb75bd98c2
-PKG_MIRROR_HASH:=c1f0f565921c71ff9231508c7c249baacad4c3ae1a3fade25c37bcb2bf7a7b5f
 
 PKG_LICENSE:=LGPL-2.1
 PKG_LICENSE_FILES:=
 
-PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
 PKG_BUILD_PARALLEL:=0
 
@@ -35,7 +39,6 @@ define Package/libuci
   CATEGORY:=Libraries
   TITLE:=C library for the Unified Configuration Interface (UCI)
   DEPENDS:=+libubox
-  ABI_VERSION:=20130104
 endef
 
 define Package/uci

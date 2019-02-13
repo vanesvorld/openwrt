@@ -9,13 +9,11 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=rb532
 BOARDNAME:=Mikrotik RouterBoard 532
-FEATURES:=pci targz squashfs minor nand
-MAINTAINER:=Roman Yeryomin <roman@advem.lv>
+FEATURES:=pci targz
 
-KERNEL_PATCHVER:=4.14
+KERNEL_PATCHVER:=3.18
 
 include $(INCLUDE_DIR)/target.mk
-
-DEFAULT_PACKAGES += wpad-basic kmod-ath5k kmod-input-rb532 e2fsprogs mkf2fs nand-utils
+DEFAULT_PACKAGES += wpad-mini kmod-ath5k kmod-input-rb532
 
 $(eval $(call BuildTarget))

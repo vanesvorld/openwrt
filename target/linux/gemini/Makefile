@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2018 OpenWrt.org
+# Copyright (C) 2009-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,24 +9,15 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=gemini
 BOARDNAME:=Cortina Systems CS351x
-FEATURES:=squashfs pci rtc usb dt gpio display
+SUBTARGETS:=raidsonic wiligear
+FEATURES:=squashfs pci rtc
 CPU_TYPE:=fa526
 MAINTAINER:=Roman Yeryomin <roman@advem.lv>
 
-KERNEL_PATCHVER:=4.14
+KERNEL_PATCHVER:=3.18
 
-define Target/Description
-	Build firmware images for the StorLink/Cortina Gemini CS351x ARM FA526 CPU
-endef
-
-KERNELNAME:=zImage dtbs
+KERNELNAME:=zImage
 
 include $(INCLUDE_DIR)/target.mk
-
-DEFAULT_PACKAGES += \
-	kmod-usb-core kmod-usb-fotg210 \
-	kmod-usb-ledtrig-usbport \
-	kmod-leds-gpio kmod-ledtrig-heartbeat \
-	kmod-gpio-button-hotplug
 
 $(eval $(call BuildTarget))

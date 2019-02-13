@@ -4,12 +4,8 @@
 	compatible = "ralink,rt3883-soc";
 
 	cpus {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
 		cpu@0 {
 			compatible = "mips,mips74Kc";
-			reg = <0>;
 		};
 	};
 
@@ -19,18 +15,16 @@
 
 	aliases {
 		spi0 = &spi0;
-		spi1 = &spi1;
-		serial0 = &uartlite;
 	};
 
-	cpuintc: cpuintc {
+	cpuintc: cpuintc@0 {
 		#address-cells = <0>;
 		#interrupt-cells = <1>;
 		interrupt-controller;
 		compatible = "mti,cpu-interrupt-controller";
 	};
 
-	palmbus: palmbus@10000000 {
+	palmbus@10000000 {
 		compatible = "palmbus";
 		reg = <0x10000000 0x200000>;
 		ranges = <0x0 0x10000000 0x1FFFFF>;
@@ -38,12 +32,12 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sysc: sysc@0 {
-			compatible = "ralink,rt3883-sysc", "ralink,rt3050-sysc", "syscon";
+		sysc@0 {
+			compatible = "ralink,rt3883-sysc", "ralink,rt3050-sysc";
 			reg = <0x0 0x100>;
 		};
 
-		timer: timer@100 {
+		timer@100 {
 			compatible = "ralink,rt3883-timer", "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
@@ -51,7 +45,7 @@
 			interrupts = <1>;
 		};
 
-		watchdog: watchdog@120 {
+		watchdog@120 {
 			compatible = "ralink,rt3883-wdt", "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
@@ -76,7 +70,7 @@
 			interrupts = <2>;
 		};
 
-		memc: memc@300 {
+		memc@300 {
 			compatible = "ralink,rt3883-memc", "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
 
@@ -87,7 +81,7 @@
 			interrupts = <3>;
 		};
 
-		uart: uart@500 {
+		uart@500 {
 			compatible = "ralink,rt3883-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0x500 0x100>;
 
@@ -116,7 +110,7 @@
 			#gpio-cells = <2>;
 
 			ralink,gpio-base = <0>;
-			ralink,nr-gpio = <24>;
+			ralink,num-gpios = <24>;
 			ralink,register-map = [ 00 04 08 0c
 						20 24 28 2c
 						30 34 ];
@@ -130,7 +124,7 @@
 			#gpio-cells = <2>;
 
 			ralink,gpio-base = <24>;
-			ralink,nr-gpio = <16>;
+			ralink,num-gpios = <16>;
 			ralink,register-map = [ 00 04 08 0c
 						10 14 18 1c
 						20 24 ];
@@ -146,7 +140,7 @@
 			#gpio-cells = <2>;
 
 			ralink,gpio-base = <40>;
-			ralink,nr-gpio = <32>;
+			ralink,num-gpios = <32>;
 			ralink,register-map = [ 00 04 08 0c
 						10 14 18 1c
 						20 24 ];
@@ -162,7 +156,7 @@
 			#gpio-cells = <2>;
 
 			ralink,gpio-base = <72>;
-			ralink,nr-gpio = <24>;
+			ralink,num-gpios = <24>;
 			ralink,register-map = [ 00 04 08 0c
 						10 14 18 1c
 						20 24 ];
@@ -170,45 +164,9 @@
 			status = "disabled";
 		};
 
-		i2c@900 {
-			compatible = "ralink,rt2880-i2c";
-			reg = <0x900 0x100>;
-
-			resets = <&rstctrl 16>;
-			reset-names = "i2c";
-
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			status = "disabled";
-
-			pinctrl-names = "default";
-			pinctrl-0 = <&i2c_pins>;
-		};
-
-		i2s@a00 {
-			compatible = "ralink,rt3883-i2s";
-			reg = <0xa00 0x100>;
-
-			resets = <&rstctrl 17>;
-			reset-names = "i2s";
-
-			interrupt-parent = <&intc>;
-			interrupts = <10>;
-
-			txdma-req = <2>;
-			rxdma-req = <3>;
-
-			dmas = <&gdma 4>,
-				<&gdma 6>;
-			dma-names = "tx", "rx";
-
-			status = "disabled";
-		};
-
 		spi0: spi@b00 {
 			compatible = "ralink,rt3883-spi", "ralink,rt2880-spi";
-			reg = <0xb00 0x40>;
+			reg = <0xb00 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
@@ -221,22 +179,7 @@
 			status = "disabled";
 		};
 
-		spi1: spi@b40 {
-			compatible = "ralink,rt3883-spi", "ralink,rt2880-spi";
-			reg = <0xb40 0x60>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			resets = <&rstctrl 18>;
-			reset-names = "spi";
-
-			pinctrl-names = "default";
-			pinctrl-0 = <&spi_cs1>;
-
-			status = "disabled";
-		};
-
-		uartlite: uartlite@c00 {
+		uartlite@c00 {
 			compatible = "ralink,rt3883-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
 
@@ -251,52 +194,20 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&uartlite_pins>;
 		};
-
-		gdma: gdma@2800 {
-			compatible = "ralink,rt3883-gdma";
-			reg = <0x2800 0x800>;
-
-			resets = <&rstctrl 14>;
-			reset-names = "dma";
-
-			interrupt-parent = <&intc>;
-			interrupts = <7>;
-
-			#dma-cells = <1>;
-			#dma-channels = <16>;
-			#dma-requests = <16>;
-
-			status = "disabled";
-		};
 	};
 
-	pinctrl: pinctrl {
+	pinctrl {
 		compatible = "ralink,rt2880-pinmux";
 
 		pinctrl-names = "default";
 		pinctrl-0 = <&state_default>;
-
 		state_default: pinctrl0 {
 		};
 
-		i2c_pins: i2c_pins {
-			i2c_pins {
-				ralink,group = "i2c";
-				ralink,function = "i2c";
-			};
-		};
-
-		spi_pins: spi_pins {
-			spi_pins {
+		spi_pins: spi {
+			spi {
 				ralink,group = "spi";
 				ralink,function = "spi";
-			};
-		};
-
-		spi_cs1: spi1 {
-			spi1 {
-				ralink,group = "pci";
-				ralink,function = "pci-func";
 			};
 		};
 
@@ -306,20 +217,11 @@
 				ralink,function = "uartlite";
 			};
 		};
-
-		pci_pins: pci {
-			pci {
-				ralink,group = "pci";
-				ralink,function = "pci-fnc";
-			};
-		};
 	};
 
-	ethernet: ethernet@10100000 {
+	ethernet@10100000 {
 		compatible = "ralink,rt3883-eth";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0x10100000 0x10000>;
+		reg = <0x10100000 10000>;
 
 		resets = <&rstctrl 21>;
 		reset-names = "fe";
@@ -328,7 +230,7 @@
 		interrupts = <5>;
 
 		port@0 {
-			compatible = "ralink,rt3883-port", "mediatek,eth-port";
+			compatible = "ralink,rt3883-port", "ralink,eth-port";
 			reg = <0>;
 		};
 
@@ -345,20 +247,12 @@
 		#reset-cells = <1>;
 	};
 
-	clkctrl: clkctrl {
-		compatible = "ralink,rt2880-clock";
-		#clock-cells = <1>;
-	};
-
-	pci: pci@10140000 {
+	pci@10140000 {
 		compatible = "ralink,rt3883-pci";
 		reg = <0x10140000 0x20000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges; /* direct mapping */
-
-		pinctrl-names = "default";
-		pinctrl-0 = <&pci_pins>;
 
 		status = "disabled";
 
@@ -371,7 +265,7 @@
 			interrupts = <4>;
 		};
 
-		pci@0 {
+		host-bridge {
 			#address-cells = <3>;
 			#size-cells = <2>;
 			#interrupt-cells = <1>;
@@ -398,7 +292,7 @@
 				0x9000 0 0 4 &pciintc 19
 			>;
 
-			pci1: pci@1 {
+			pci-bridge@1 {
 				reg = <0x0800 0 0 0 0>;
 				device_type = "pci";
 				#interrupt-cells = <1>;
@@ -407,27 +301,32 @@
 
 				status = "disabled";
 
+				ralink,pci-slot = <1>;
+
 				interrupt-map-mask = <0x0 0 0 0>;
 				interrupt-map = <0x0 0 0 0 &pciintc 20>;
-
-				bus-range = <1 255>;
-				ranges;
 			};
 
-			pci17: pci@11,0 {
+			pci-slot@17 {
 				reg = <0x8800 0 0 0 0>;
+				device_type = "pci";
 				#interrupt-cells = <1>;
 				#address-cells = <3>;
 				#size-cells = <2>;
+
+				ralink,pci-slot = <17>;
 
 				status = "disabled";
 			};
 
-			pci18: pci@12,0 {
+			pci-slot@18 {
 				reg = <0x9000 0 0 0 0>;
+				device_type = "pci";
 				#interrupt-cells = <1>;
 				#address-cells = <3>;
 				#size-cells = <2>;
+
+				ralink,pci-slot = <18>;
 
 				status = "disabled";
 			};
@@ -435,19 +334,16 @@
 	};
 
 	usbphy: usbphy {
-		compatible = "ralink,rt3352-usbphy";
-		#phy-cells = <0>;
+		compatible = "ralink,rt3xxx-usbphy";
+		#phy-cells = <1>;
 
-		ralink,sysctl = <&sysc>;
 		resets = <&rstctrl 22 &rstctrl 25>;
 		reset-names = "host", "device";
-		clocks = <&clkctrl 22 &clkctrl 25>;
-		clock-names = "host", "device";
 	};
 
-	wmac: wmac@10180000 {
+	wmac@10180000 {
 		compatible = "ralink,rt3883-wmac", "ralink,rt2880-wmac";
-		reg = <0x10180000 0x40000>;
+		reg = <0x10180000 40000>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;
@@ -455,43 +351,29 @@
 		ralink,eeprom = "soc_wmac.eeprom";
 	};
 
-	ehci: ehci@101c0000 {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		compatible = "generic-ehci";
+	ehci@101c0000 {
+		compatible = "ralink,rt3xxx-ehci", "ehci-platform";
 		reg = <0x101c0000 0x1000>;
 
-		phys = <&usbphy>;
+		phys = <&usbphy 1>;
 		phy-names = "usb";
 
 		interrupt-parent = <&intc>;
 		interrupts = <18>;
 
 		status = "disabled";
-
-		ehci_port1: port@1 {
-			reg = <1>;
-			#trigger-source-cells = <0>;
-		};
 	};
 
-	ohci: ohci@101c1000 {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		compatible = "generic-ohci";
+	ohci@101c1000 {
+		compatible = "ralink,rt3xxx-ohci", "ohci-platform";
 		reg = <0x101c1000 0x1000>;
 
-		phys = <&usbphy>;
+		phys = <&usbphy 1>;
 		phy-names = "usb";
 
 		interrupt-parent = <&intc>;
 		interrupts = <18>;
 
 		status = "disabled";
-
-		ohci_port1: port@1 {
-			reg = <1>;
-			#trigger-source-cells = <0>;
-		};
 	};
 };

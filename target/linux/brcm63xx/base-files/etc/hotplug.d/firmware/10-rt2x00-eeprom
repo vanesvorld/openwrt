@@ -12,6 +12,8 @@ rt2x00_eeprom_extract() {
 	local count=$3
 	local mtd
 
+	. /lib/functions.sh
+
 	mtd=$(find_mtd_part $part)
 	[ -n "$mtd" ] || \
 		rt2x00_eeprom_die "no mtd device found for partition $part"
@@ -22,9 +24,9 @@ rt2x00_eeprom_extract() {
 
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
-. /lib/functions.sh
+. /lib/brcm63xx.sh
 
-board=$(board_name)
+board=$(brcm63xx_board_name)
 
 case "$FIRMWARE" in
 "rt2x00.eeprom" )
@@ -32,7 +34,6 @@ case "$FIRMWARE" in
 	hg556a_c)
 		rt2x00_eeprom_extract "cal_data" 130560 512
 		;;
-	hg622 |\
 	hg655b)
 		rt2x00_eeprom_extract "cal_data" 0 512
 		;;

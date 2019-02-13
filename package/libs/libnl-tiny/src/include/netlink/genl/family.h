@@ -39,7 +39,6 @@ struct genl_family
 	uint32_t		gf_maxattr;
 
 	struct nl_list_head	gf_ops;
-	struct nl_list_head	gf_mc_grps;
 };
 
 
@@ -48,9 +47,6 @@ extern void			genl_family_put(struct genl_family *);
 
 extern int			genl_family_add_op(struct genl_family *,
 						   int, int);
-extern int 			genl_family_add_grp(struct genl_family *,
-					uint32_t , const char *);
-
 
 /**
  * @name Attributes
@@ -62,7 +58,7 @@ static inline unsigned int genl_family_get_id(struct genl_family *family)
 	if (family->ce_mask & FAMILY_ATTR_ID)
 		return family->gf_id;
 	else
-		return 0;
+		return GENL_ID_GENERATE;
 }
 
 static inline void genl_family_set_id(struct genl_family *family, unsigned int id)

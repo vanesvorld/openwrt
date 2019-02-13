@@ -4,12 +4,8 @@
 	compatible = "ralink,rt3050-soc", "ralink,rt3052-soc", "ralink,rt3350-soc";
 
 	cpus {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
 		cpu@0 {
 			compatible = "mips,mips24KEc";
-			reg = <0>;
 		};
 	};
 
@@ -17,19 +13,14 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	aliases {
-		spi0 = &spi0;
-		serial0 = &uartlite;
-	};
-
-	cpuintc: cpuintc {
+	cpuintc: cpuintc@0 {
 		#address-cells = <0>;
 		#interrupt-cells = <1>;
 		interrupt-controller;
 		compatible = "mti,cpu-interrupt-controller";
 	};
 
-	palmbus: palmbus@10000000 {
+	palmbus@10000000 {
 		compatible = "palmbus";
 		reg = <0x10000000 0x200000>;
 		ranges = <0x0 0x10000000 0x1FFFFF>;
@@ -37,12 +28,12 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sysc: sysc@0 {
-			compatible = "ralink,rt3050-sysc", "syscon";
+		sysc@0 {
+			compatible = "ralink,rt3050-sysc";
 			reg = <0x0 0x100>;
 		};
 
-		timer: timer@100 {
+		timer@100 {
 			compatible = "ralink,rt3050-timer", "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
@@ -50,7 +41,7 @@
 			interrupts = <1>;
 		};
 
-		watchdog: watchdog@120 {
+		watchdog@120 {
 			compatible = "ralink,rt3050-wdt", "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
@@ -75,7 +66,7 @@
 			interrupts = <2>;
 		};
 
-		memc: memc@300 {
+		memc@300 {
 			compatible = "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
 
@@ -86,7 +77,7 @@
 			interrupts = <3>;
 		};
 
-		uart: uart@500 {
+		uart@500 {
 			compatible = "ralink,rt3050-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0x500 0x100>;
 
@@ -109,7 +100,7 @@
 			#gpio-cells = <2>;
 
 			ralink,gpio-base = <0>;
-			ralink,nr-gpio = <24>;
+			ralink,num-gpios = <24>;
 			ralink,register-map = [ 00 04 08 0c
 						20 24 28 2c
 						30 34 ];
@@ -129,7 +120,7 @@
 			#gpio-cells = <2>;
 
 			ralink,gpio-base = <24>;
-			ralink,nr-gpio = <16>;
+			ralink,num-gpios = <16>;
 			ralink,register-map = [ 00 04 08 0c
 						10 14 18 1c
 						20 24 ];
@@ -145,7 +136,7 @@
 			#gpio-cells = <2>;
 
 			ralink,gpio-base = <40>;
-			ralink,nr-gpio = <12>;
+			ralink,num-gpios = <12>;
 			ralink,register-map = [ 00 04 08 0c
 						10 14 18 1c
 						20 24 ];
@@ -153,58 +144,7 @@
 			status = "disabled";
 		};
 
-		gdma: gdma@700 {
-			compatible = "ralink,rt305x-gdma";
-			reg = <0x700 0x100>;
-
-			resets = <&rstctrl 14>;
-			reset-names = "dma";
-
-			interrupt-parent = <&intc>;
-			interrupts = <7>;
-
-			#dma-cells = <1>;
-			#dma-channels = <8>;
-			#dma-requests = <8>;
-
-			status = "disabled";
-		};
-
-		i2c@900 {
-			compatible = "ralink,rt2880-i2c";
-			reg = <0x900 0x100>;
-
-			resets = <&rstctrl 16>;
-			reset-names = "i2c";
-
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			status = "disabled";
-
-			pinctrl-names = "default";
-			pinctrl-0 = <&i2c_pins>;
-		};
-
-		i2s@a00 {
-			compatible = "ralink,rt3050-i2s";
-			reg = <0xa00 0x100>;
-
-			resets = <&rstctrl 17>;
-			reset-names = "i2s";
-
-			interrupt-parent = <&intc>;
-			interrupts = <10>;
-
-			txdma-req = <2>;
-
-			dmas = <&gdma 4>;
-			dma-names = "tx";
-
-			status = "disabled";
-		};
-
-		spi0: spi@b00 {
+		spi@b00 {
 			compatible = "ralink,rt3050-spi", "ralink,rt2880-spi";
 			reg = <0xb00 0x100>;
 
@@ -220,7 +160,7 @@
 			status = "disabled";
 		};
 
-		uartlite: uartlite@c00 {
+		uartlite@c00 {
 			compatible = "ralink,rt3050-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
 
@@ -235,9 +175,10 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&uartlite_pins>;
 		};
+
 	};
 
-	pinctrl: pinctrl {
+	pinctrl {
 		compatible = "ralink,rt2880-pinmux";
 
 		pinctrl-names = "default";
@@ -250,27 +191,12 @@
 			};
 		};
 
-		i2c_pins: i2c_pins {
-			i2c_pins {
-				ralink,group = "i2c";
-				ralink,function = "i2c";
-			};
-		};
-
-		spi_pins: spi_pins {
-			spi_pins {
+		spi_pins: spi {
+			spi {
 				ralink,group = "spi";
 				ralink,function = "spi";
 			};
 		};
-
-		rgmii_pins: rgmii {
-			rgmii {
-				ralink,group = "rgmii";
-				ralink,function = "rgmii";
-			};
-		};
-
 		uartlite_pins: uartlite {
 			uart {
 				ralink,group = "uartlite";
@@ -284,38 +210,20 @@
 		#reset-cells = <1>;
 	};
 
-	clkctrl: clkctrl {
-		compatible = "ralink,rt2880-clock";
-		#clock-cells = <1>;
-	};
-
-	usbphy: usbphy {
-		compatible = "ralink,rt3050-usbphy";
-		#phy-cells = <0>;
-
-		ralink,sysctl = <&sysc>;
-		resets = <&rstctrl 22>;
-		reset-names = "host";
-		clocks = <&clkctrl 18>;
-		clock-names = "host";
-	};
-
-	ethernet: ethernet@10100000 {
+	ethernet@10100000 {
 		compatible = "ralink,rt3050-eth";
-		reg = <0x10100000 0x10000>;
+		reg = <0x10100000 10000>;
 
 		resets = <&rstctrl 21>;
 		reset-names = "fe";
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
-
-		mediatek,switch = <&esw>;
 	};
 
-	esw: esw@10110000 {
+	esw@10110000 {
 		compatible = "ralink,rt3050-esw";
-		reg = <0x10110000 0x8000>;
+		reg = <0x10110000 8000>;
 
 		resets = <&rstctrl 23>;
 		reset-names = "esw";
@@ -324,9 +232,9 @@
 		interrupts = <17>;
 	};
 
-	wmac: wmac@10180000 {
+	wmac@10180000 {
 		compatible = "ralink,rt3050-wmac", "ralink,rt2880-wmac";
-		reg = <0x10180000 0x40000>;
+		reg = <0x10180000 40000>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;
@@ -334,11 +242,9 @@
 		ralink,eeprom = "soc_wmac.eeprom";
 	};
 
-	otg: otg@101c0000 {
-		#address-cells = <1>;
-		#size-cells = <0>;
+	otg@101c0000 {
 		compatible = "ralink,rt3050-otg", "snps,dwc2";
-		reg = <0x101c0000 0x40000>;
+		reg = <0x101c0000 40000>;
 
 		interrupt-parent = <&intc>;
 		interrupts = <18>;
@@ -347,10 +253,5 @@
 		reset-names = "otg";
 
 		status = "disabled";
-
-		otg_port1: port@1 {
-			reg = <1>;
-			#trigger-source-cells = <0>;
-		};
 	};
 };

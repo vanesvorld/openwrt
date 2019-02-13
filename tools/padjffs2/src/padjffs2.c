@@ -15,7 +15,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -26,7 +25,6 @@ static unsigned char jffs2_pad_be[] = "\x19\x85\x20\x04\x04\x00\x00\x00\xc4\x94\
 static unsigned char jffs2_pad_le[] = "\x85\x19\x04\x20\x00\x00\x00\x04\xa8\xfb\xa0\xb4";
 static unsigned char *pad = eof_mark;
 static int pad_len = sizeof(eof_mark);
-static bool pad_to_stdout = false;
 
 #define ERR(fmt, ...) do { \
 	fflush(0); \
@@ -48,7 +46,6 @@ static int pad_image(char *name, uint32_t pad_mask)
 {
 	char *buf;
 	int fd;
-	int outfd;
 	ssize_t in_len;
 	ssize_t out_len;
 	int ret = -1;
@@ -68,11 +65,6 @@ static int pad_image(char *name, uint32_t pad_mask)
 	in_len = lseek(fd, 0, SEEK_END);
 	if (in_len < 0)
 		goto close;
-
-	if (!pad_to_stdout)
-		outfd = fd;
-	else
-		outfd = STDOUT_FILENO;
 
 	memset(buf, '\xff', BUF_SIZE);
 
@@ -98,7 +90,7 @@ static int pad_image(char *name, uint32_t pad_mask)
 				pad_mask &= ~mask;
 		}
 
-		fprintf(stderr, "padding image to %08x\n", (unsigned int) in_len - xtra_offset);
+		printf("padding image to %08x\n", (unsigned int) in_len - xtra_offset);
 
 		while (out_len < in_len) {
 			ssize_t len;
@@ -107,7 +99,7 @@ static int pad_image(char *name, uint32_t pad_mask)
 			if (len > BUF_SIZE)
 				len = BUF_SIZE;
 
-			t = write(outfd, buf, len);
+			t = write(fd, buf, len);
 			if (t != len) {
 				ERRS("Unable to write to %s", name);
 				goto close;
@@ -117,7 +109,7 @@ static int pad_image(char *name, uint32_t pad_mask)
 		}
 
 		/* write out the JFFS end-of-filesystem marker */
-		t = write(outfd, pad, pad_len);
+		t = write(fd, pad, pad_len);
 		if (t != pad_len) {
 			ERRS("Unable to write to %s", name);
 			goto close;
@@ -145,7 +137,6 @@ static int usage(void)
 		"                        This is used to work around broken boot loaders that\n"
 		"                        try to parse the entire firmware area as one big jffs2\n"
 		"  -j:                   (like -J, but little-endian instead of big-endian)\n"
-		"  -c:                   write padding to stdout\n"
 		"\n",
 		progname);
 	return EXIT_FAILURE;
@@ -169,7 +160,7 @@ int main(int argc, char* argv[])
 	argc--;
 
 	pad_mask = 0;
-	while ((ch = getopt(argc, argv, "x:Jjc")) != -1) {
+	while ((ch = getopt(argc, argv, "x:Jj")) != -1) {
 		switch (ch) {
 		case 'x':
 			xtra_offset = strtoul(optarg, NULL, 0);
@@ -183,9 +174,6 @@ int main(int argc, char* argv[])
 		case 'j':
 			pad = jffs2_pad_le;
 			pad_len = sizeof(jffs2_pad_le) - 1;
-			break;
-		case 'c':
-			pad_to_stdout = true;
 			break;
 		default:
 			return usage();

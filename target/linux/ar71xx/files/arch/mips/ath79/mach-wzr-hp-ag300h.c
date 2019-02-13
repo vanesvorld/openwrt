@@ -1,7 +1,7 @@
 /*
  *  Buffalo WZR-HP-AG300H board support
  *
- *  Copyright (C) 2011 Felix Fietkau <nbd@nbd.name>
+ *  Copyright (C) 2011 Felix Fietkau <nbd@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -191,6 +191,9 @@ static void __init wzrhpag300h_setup(void)
 	ath79_register_m25p80_multi(&wzrhpag300h_flash_data);
 
 	ap94_pci_init(eeprom1, mac1, eeprom2, mac2);
+
+	ap9x_pci_setup_wmac_led_pin(0, 1);
+	ap9x_pci_setup_wmac_led_pin(1, 5);
 
 	ap9x_pci_setup_wmac_leds(0, wzrhpag300h_wmac0_leds_gpio,
 				ARRAY_SIZE(wzrhpag300h_wmac0_leds_gpio));

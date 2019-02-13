@@ -39,6 +39,7 @@
 						atmel,pins =
 							<2 1 0x2 0x0>;	/* PC1 periph B */
 					};
+
 				};
 			};
 
@@ -116,7 +117,7 @@
 			};
 		};
 
-		usb0: ohci@500000 {
+		usb0: ohci@00500000 {
 			num-ports = <2>;
 			status = "okay";
 		};

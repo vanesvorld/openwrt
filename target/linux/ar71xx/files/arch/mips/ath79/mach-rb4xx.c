@@ -11,7 +11,7 @@
 
 #include <linux/platform_device.h>
 #include <linux/irq.h>
-#include <linux/platform_data/mdio-gpio.h> 
+#include <linux/mdio-gpio.h>
 #include <linux/mmc/host.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>

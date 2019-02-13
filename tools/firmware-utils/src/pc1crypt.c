@@ -208,7 +208,7 @@ static int decrypt;
 #define ERRS(fmt, ...) do { \
 	int save = errno; \
 	fflush(0); \
-	fprintf(stderr, "[%s] *** error: " fmt ": %s\n", \
+	fprintf(stderr, "[%s] *** error: " fmt "\n", \
 			progname, ## __VA_ARGS__, strerror(save)); \
 } while (0)
 

@@ -12,7 +12,6 @@
  */
 
 #include "ag71xx.h"
-#include <linux/version.h>
 
 static int ag71xx_ethtool_get_settings(struct net_device *dev,
 				       struct ethtool_cmd *cmd)
@@ -23,11 +22,7 @@ static int ag71xx_ethtool_get_settings(struct net_device *dev,
 	if (!phydev)
 		return -ENODEV;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
 	return phy_ethtool_gset(phydev, cmd);
-#else
-	return phy_ethtool_ioctl(phydev, cmd);
-#endif
 }
 
 static int ag71xx_ethtool_set_settings(struct net_device *dev,
@@ -39,11 +34,7 @@ static int ag71xx_ethtool_set_settings(struct net_device *dev,
 	if (!phydev)
 		return -ENODEV;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
 	return phy_ethtool_sset(phydev, cmd);
-#else
-	return phy_ethtool_ioctl(phydev, cmd);
-#endif
 }
 
 static void ag71xx_ethtool_get_drvinfo(struct net_device *dev,
@@ -80,8 +71,8 @@ static void ag71xx_ethtool_get_ringparam(struct net_device *dev,
 	er->rx_mini_max_pending = 0;
 	er->rx_jumbo_max_pending = 0;
 
-	er->tx_pending = BIT(ag->tx_ring.order);
-	er->rx_pending = BIT(ag->rx_ring.order);
+	er->tx_pending = ag->tx_ring.size;
+	er->rx_pending = ag->rx_ring.size;
 	er->rx_mini_pending = 0;
 	er->rx_jumbo_pending = 0;
 
@@ -95,7 +86,7 @@ static int ag71xx_ethtool_set_ringparam(struct net_device *dev,
 	struct ag71xx *ag = netdev_priv(dev);
 	unsigned tx_size;
 	unsigned rx_size;
-	int err = 0;
+	int err;
 
 	if (er->rx_mini_pending != 0||
 	    er->rx_jumbo_pending != 0 ||
@@ -118,8 +109,8 @@ static int ag71xx_ethtool_set_ringparam(struct net_device *dev,
 	if (ag->tx_ring.desc_split)
 		tx_size *= AG71XX_TX_RING_DS_PER_PKT;
 
-	ag->tx_ring.order = ag71xx_ring_size_order(tx_size);
-	ag->rx_ring.order = ag71xx_ring_size_order(rx_size);
+	ag->tx_ring.size = tx_size;
+	ag->rx_ring.size = rx_size;
 
 	if (netif_running(dev))
 		err = dev->netdev_ops->ndo_open(dev);
@@ -136,5 +127,4 @@ struct ethtool_ops ag71xx_ethtool_ops = {
 	.get_ringparam	= ag71xx_ethtool_get_ringparam,
 	.set_ringparam	= ag71xx_ethtool_set_ringparam,
 	.get_link	= ethtool_op_get_link,
-	.get_ts_info	= ethtool_op_get_ts_info,
 };

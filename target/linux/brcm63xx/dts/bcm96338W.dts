@@ -1,19 +1,12 @@
 /dts-v1/;
 
-#include "bcm6338.dtsi"
-
-#include <dt-bindings/input/input.h>
+/include/ "bcm6338.dtsi"
 
 / {
 	model = "Broadcom BCM96338W reference board";
 	compatible = "brcm,bcm96338w", "brcm,bcm6338";
 
-	chosen {
-		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
-		stdout-path = "serial0:115200n8";
-	};
-
-	leds {
+	gpio-leds {
 		compatible = "gpio-leds";
 
 		power_green {
@@ -38,16 +31,4 @@
 			gpios = <&gpio0 5 1>;
 		};
 	};
-};
-
-&pflash {
-	status = "ok";
-
-	partitions {
-		compatible = "brcm,bcm963xx-cfe-nor-partitions";
-	};
-};
-
-&uart0 {
-	status = "ok";
 };

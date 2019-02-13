@@ -40,12 +40,7 @@
 #define AG71XX_DRV_NAME		"ag71xx"
 #define AG71XX_DRV_VERSION	"0.5.35"
 
-/*
- * For our NAPI weight bigger does *NOT* mean better - it means more
- * D-cache misses and lots more wasted cycles than we'll ever
- * possibly gain from saving instructions.
- */
-#define AG71XX_NAPI_WEIGHT	32
+#define AG71XX_NAPI_WEIGHT	64
 #define AG71XX_OOM_REFILL	(1 + HZ/10)
 
 #define AG71XX_INT_ERR	(AG71XX_INT_RX_BE | AG71XX_INT_TX_BE)
@@ -60,13 +55,11 @@
 #define AG71XX_TX_RING_SPLIT		512
 #define AG71XX_TX_RING_DS_PER_PKT	DIV_ROUND_UP(AG71XX_TX_MTU_LEN, \
 						     AG71XX_TX_RING_SPLIT)
-#define AG71XX_TX_RING_SIZE_DEFAULT	128
-#define AG71XX_RX_RING_SIZE_DEFAULT	256
+#define AG71XX_TX_RING_SIZE_DEFAULT	48
+#define AG71XX_RX_RING_SIZE_DEFAULT	128
 
-#define AG71XX_TX_RING_SIZE_MAX		128
-#define AG71XX_RX_RING_SIZE_MAX		256
-
-#define QCA955X_SGMII_LINK_WAR_MAX_TRY	10
+#define AG71XX_TX_RING_SIZE_MAX		48
+#define AG71XX_RX_RING_SIZE_MAX		128
 
 #ifdef CONFIG_AG71XX_DEBUG
 #define DBG(fmt, args...)	pr_debug(fmt, ## args)
@@ -92,9 +85,6 @@ struct ag71xx_desc {
 	u32	pad;
 } __attribute__((aligned(4)));
 
-#define AG71XX_DESC_SIZE	roundup(sizeof(struct ag71xx_desc), \
-					L1_CACHE_BYTES)
-
 struct ag71xx_buf {
 	union {
 		struct sk_buff	*skb;
@@ -102,8 +92,9 @@ struct ag71xx_buf {
 	};
 	union {
 		dma_addr_t	dma_addr;
-		unsigned int		len;
+		unsigned long	timestamp;
 	};
+	unsigned int		len;
 };
 
 struct ag71xx_ring {
@@ -111,16 +102,15 @@ struct ag71xx_ring {
 	u8			*descs_cpu;
 	dma_addr_t		descs_dma;
 	u16			desc_split;
-	u16			order;
+	u16			desc_size;
 	unsigned int		curr;
 	unsigned int		dirty;
+	unsigned int		size;
 };
 
 struct ag71xx_mdio {
 	struct mii_bus		*mii_bus;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0)
 	int			mii_irq[PHY_MAX_ADDR];
-#endif
 	void __iomem		*mdio_base;
 	struct ag71xx_mdio_platform_data *pdata;
 };
@@ -156,30 +146,19 @@ struct ag71xx_debug {
 };
 
 struct ag71xx {
-	/*
-	 * Critical data related to the per-packet data path are clustered
-	 * early in this structure to help improve the D-cache footprint.
-	 */
-	struct ag71xx_ring	rx_ring ____cacheline_aligned;
-	struct ag71xx_ring	tx_ring ____cacheline_aligned;
+	void __iomem		*mac_base;
 
-	unsigned int            max_frame_len;
-	unsigned int            desc_pktlen_mask;
-	unsigned int            rx_buf_size;
-
-	struct net_device	*dev;
-	struct platform_device  *pdev;
 	spinlock_t		lock;
+	struct platform_device	*pdev;
+	struct net_device	*dev;
 	struct napi_struct	napi;
 	u32			msg_enable;
 
-	/*
-	 * From this point onwards we're not looking at per-packet fields.
-	 */
-	void __iomem		*mac_base;
-
 	struct ag71xx_desc	*stop_desc;
 	dma_addr_t		stop_desc_dma;
+
+	struct ag71xx_ring	rx_ring;
+	struct ag71xx_ring	tx_ring;
 
 	struct mii_bus		*mii_bus;
 	struct phy_device	*phy_dev;
@@ -189,7 +168,11 @@ struct ag71xx {
 	unsigned int		speed;
 	int			duplex;
 
-	struct delayed_work	restart_work;
+	unsigned int		max_frame_len;
+	unsigned int		desc_pktlen_mask;
+	unsigned int		rx_buf_size;
+
+	struct work_struct	restart_work;
 	struct delayed_work	link_work;
 	struct timer_list	oom_timer;
 
@@ -222,13 +205,7 @@ static inline int ag71xx_desc_empty(struct ag71xx_desc *desc)
 static inline struct ag71xx_desc *
 ag71xx_ring_desc(struct ag71xx_ring *ring, int idx)
 {
-	return (struct ag71xx_desc *) &ring->descs_cpu[idx * AG71XX_DESC_SIZE];
-}
-
-static inline int
-ag71xx_ring_size_order(int size)
-{
-	return fls(size - 1);
+	return (struct ag71xx_desc *) &ring->descs_cpu[idx * ring->desc_size];
 }
 
 /* Register offsets */

@@ -477,7 +477,7 @@ bool menu_is_visible(struct menu *menu)
 
 	if (menu->visibility) {
 		if (expr_calc_value(menu->visibility) == no)
-			return false;
+			return no;
 	}
 
 	sym = menu->sym;
@@ -615,7 +615,7 @@ static struct property *get_symbol_prop(struct symbol *sym)
 /*
  * head is optional and may be NULL
  */
-static void get_symbol_str(struct gstr *r, struct symbol *sym,
+void get_symbol_str(struct gstr *r, struct symbol *sym,
 		    struct list_head *head)
 {
 	bool hit;

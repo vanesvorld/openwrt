@@ -10,14 +10,14 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=wireless-tools
 PKG_VERSION:=29
 PKG_MINOR:=
-PKG_RELEASE:=6
+PKG_RELEASE:=5
 
 PKG_SOURCE:=wireless_tools.$(PKG_VERSION)$(PKG_MINOR).tar.gz
-PKG_SOURCE_URL:=https://hewlettpackard.github.io/wireless-tools
-PKG_HASH:=6fb80935fe208538131ce2c4178221bab1078a1656306bce8909c19887e2e5a1
+PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
+PKG_MD5SUM:=e06c222e186f7cc013fd272d023710cb
 TAR_OPTIONS += || true
 
-PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=GPL-2.0
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/wireless_tools.$(PKG_VERSION)
@@ -45,7 +45,6 @@ $(call Package/wireless-tools/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Library for manipulating Linux Wireless Extensions
-  ABI_VERSION:=29
 endef
 
 define Package/libiw/description

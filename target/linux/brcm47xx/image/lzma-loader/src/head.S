@@ -38,13 +38,12 @@
 	.text
 	LEAF(startup)
 	.set noreorder
-	li	sp, BZ_STACK_START
-	addi    sp, -48
-	sw      a0, 16(sp)
-	sw      a1, 20(sp)
-	sw      a2, 24(sp)
+	addi    sp, -48 
+	sw      a0, 16(sp) 
+	sw      a1, 20(sp) 
+	sw      a2, 24(sp) 
 	sw      a3, 28(sp)
-
+	
 	/* Copy decompressor code to the right place */
 	li	t2, BZ_TEXT_START
 	add	a0, t2, 0
@@ -57,7 +56,7 @@ $L1:
 	add	a0, 4
 	blt	a1, a2, $L1
 	nop
-
+	
 	/* At this point we need to invalidate dcache and */
 	/* icache before jumping to new code */
 
@@ -104,10 +103,10 @@ $L1:
 	.set	mips0
 	bne	t0,t1,1b
 	addu	t0,s1
-
+	
 nodc:
 	/* Now we get to do it all again for the I$ */
-
+	
 	move	s3,zero			/* just in case there is no icache */
 	move	s4,zero
 
@@ -151,11 +150,11 @@ nodc:
 	addu	t0,s3
 
 noic:
-	move	a0,s4			/* icache size */
-	move	a1,s3			/* icache line size */
-	move	a2,s2			/* dcache size */
+	move	a0,s3			/* icache line size */
+	move	a1,s4			/* icache size */
+	move	a2,s1			/* dcache line size */
 	jal	t2
-	move	a3,s1			/* dcache line size */
-
+	move	a3,s2			/* dcache size */
+	
 	.set reorder
 	END(startup)

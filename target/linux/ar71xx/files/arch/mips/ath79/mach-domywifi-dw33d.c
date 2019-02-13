@@ -18,15 +18,10 @@
  *
  */
 
-#include <linux/version.h>
 #include <linux/platform_device.h>
 #include <linux/ar8216_platform.h>
 #include <linux/mtd/mtd.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
 #include <linux/mtd/nand.h>
-#else
-#include <linux/mtd/rawnand.h>
-#endif
 #include <linux/platform/ar934x_nfc.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
@@ -99,14 +94,14 @@ static struct gpio_keys_button dw33d_gpio_keys[] __initdata = {
 	}
 };
 
-/* GMAC6 of the QCA8337 switch is connected to the QCA9558 SoC via SGMII */
-static struct ar8327_pad_cfg dw33d_qca8337_pad6_cfg = {
+/* GMAC0 of the QCA8337 switch is connected to the QCA9558 SoC via SGMII */
+static struct ar8327_pad_cfg dw33d_qca8337_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_SGMII,
 	.sgmii_delay_en = true,
 };
 
-/* GMAC0 of the QCA8337 switch is connected to the QCA9558 SoC via RGMII */
-static struct ar8327_pad_cfg dw33d_qca8337_pad0_cfg = {
+/* GMAC6 of the QCA8337 switch is connected to the QCA9558 SoC via RGMII */
+static struct ar8327_pad_cfg dw33d_qca8337_pad6_cfg = {
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
 	.rxclk_delay_en = true,
@@ -136,7 +131,7 @@ static struct ar8327_platform_data dw33d_qca8337_data = {
 static struct mdio_board_info dw33d_mdio0_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
-		.mdio_addr = 0,
+		.phy_addr = 0,
 		.platform_data = &dw33d_qca8337_data,
 	},
 };

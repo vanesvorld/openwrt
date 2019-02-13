@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012 Jo-Philipp Wich <jo@mein.io>
+# Copyright (C) 2012 Jo-Philipp Wich <jow@openwrt.org>
 #
 # This is free software, licensed under the Apache 2 license.
 #
@@ -17,7 +17,7 @@ define Package/iwcap
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Simple radiotap capture utility
-  MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
+  MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 endef
 
 define Package/iwcap/description
@@ -28,6 +28,11 @@ define Package/iwcap/description
   capture drone for Wireshark or similar programs.
 endef
 
+
+define Build/Prepare
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
+endef
 
 define Build/Configure
 endef

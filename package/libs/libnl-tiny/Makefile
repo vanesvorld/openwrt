@@ -9,10 +9,10 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnl-tiny
 PKG_VERSION:=0.1
-PKG_RELEASE:=5
+PKG_RELEASE:=4
 
 PKG_LICENSE:=LGPL-2.1
-PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -24,6 +24,11 @@ endef
 
 define Package/libnl-tiny/description
  This package contains a stripped down version of libnl
+endef
+
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
 TARGET_CFLAGS += $(FPIC)

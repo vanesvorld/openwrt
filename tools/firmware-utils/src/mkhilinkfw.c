@@ -22,7 +22,6 @@
  *   gcc -lcrypto hlkcrypt.c -o hlkcrypt
  */
  
-#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>

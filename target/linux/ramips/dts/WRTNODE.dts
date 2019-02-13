@@ -1,104 +1,80 @@
 /dts-v1/;
 
-#include "mt7620n.dtsi"
-
-#include <dt-bindings/gpio/gpio.h>
+/include/ "mt7620n.dtsi"
 
 / {
-	compatible = "wrtnode,wrtnode", "ralink,mt7620n-soc";
+	compatible = "wrtnode", "ralink,mt7620n-soc";
 	model = "WRTNODE";
 
-	aliases {
-		led-boot = &led_indicator;
-		led-failsafe = &led_indicator;
-		led-running = &led_indicator;
-		led-upgrade = &led_indicator;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_indicator: indicator {
-			label = "wrtnode:blue:indicator";
-			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+	palmbus@10000000 {
+		gpio2: gpio@660 {
+			status = "okay";
 		};
-	};
-};
 
-&gpio1 {
-	status = "okay";
-};
+		gpio3: gpio@688 {
+			status = "okay";
+		};
 
-&gpio2 {
-	status = "okay";
-};
+		spi@b00 {
+			status = "okay";
 
-&gpio3 {
-	status = "okay";
-};
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l12805d";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "w25q128";
+				spi-max-frequency = <10000000>;
 
-&spi0 {
-	status = "okay";
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
 
-	m25p80@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0>;
-		spi-max-frequency = <10000000>;
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
 
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
 
-			partition@0 {
-				label = "u-boot";
-				reg = <0x0 0x30000>;
-				read-only;
-			};
-
-			partition@30000 {
-				label = "u-boot-env";
-				reg = <0x30000 0x10000>;
-				read-only;
-			};
-
-			factory: partition@40000 {
-				label = "factory";
-				reg = <0x40000 0x10000>;
-				read-only;
-			};
-
-			partition@50000 {
-				compatible = "denx,uimage";
-				label = "firmware";
-				reg = <0x50000 0xfb0000>;
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0xfb0000>;
+				};
 			};
 		};
 	};
-};
 
-&ehci {
-	status = "okay";
-};
+	ehci@101c0000 {
+		status = "okay";
+	};
 
-&ohci {
-	status = "okay";
-};
+	ohci@101c1000 {
+		status = "okay";
+	};
 
-&ethernet {
-	mtd-mac-address = <&factory 0x4>;
-	mediatek,portmap = "wllll";
-};
+	ethernet@10100000 {
+		mtd-mac-address = <&factory 0x4>;
+		ralink,port-map = "wllll";
+	};
 
-&wmac {
-	ralink,mtd-eeprom = <&factory 0>;
-};
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
 
-&pinctrl {
-	state_default: pinctrl0 {
-		default {
-			ralink,group = "ephy", "wled", "pa", "i2c", "wdt", "uartf", "spi refclk";
-			ralink,function = "gpio";
+	pinctrl {
+		state_default: pinctrl0 {
+			default {
+				ralink,group = "ephy", "wled", "pa", "i2c", "wdt", "uartf";
+				ralink,function = "gpio";
+			};
 		};
 	};
 };

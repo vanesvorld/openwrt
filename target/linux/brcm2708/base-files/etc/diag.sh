@@ -1,22 +1,12 @@
 #!/bin/sh
-# Copyright (C) 2015-2016 OpenWrt.org
-# Copyright (C) 2017 LEDE project
+#
+# Copyright (C) 2015 OpenWrt.org
+#
 
-. /lib/functions.sh
 . /lib/functions/leds.sh
 
 set_state() {
-	case "$(board_name)" in
-	raspberrypi,2-model-b |\
-	raspberrypi,model-b-plus)
-		status_led="led1"
-		;;
-	raspberrypi,model-b |\
-	raspberrypi,model-zero |\
-	raspberrypi,model-zero-w)
-		status_led="led0"
-		;;
-	esac
+	status_led="led0"
 
 	case "$1" in
 	preinit)

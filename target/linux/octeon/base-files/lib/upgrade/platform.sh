@@ -2,6 +2,8 @@
 # Copyright (C) 2014 OpenWrt.org
 #
 
+. /lib/functions/octeon.sh
+
 platform_get_rootfs() {
 	local rootfsdev
 
@@ -22,7 +24,9 @@ platform_get_rootfs() {
 }
 
 platform_copy_config() {
-	case "$(board_name)" in
+	local board="$(octeon_board_name)"
+
+	case "$board" in
 	erlite)
 		mount -t vfat /dev/sda1 /mnt
 		cp -af "$CONF_TAR" /mnt/
@@ -56,17 +60,17 @@ platform_do_flash() {
 
 platform_do_upgrade() {
 	local tar_file="$1"
-	local board=$(board_name)
+	local board=$(octeon_board_name)
 	local rootfs="$(platform_get_rootfs)"
 	local kernel=
 
 	[ -b "${rootfs}" ] || return 1
 	case "$board" in
-	er)
-		kernel=mmcblk0p1
-		;;
 	erlite)
 		kernel=sda1
+		;;
+	er)
+		kernel=mmcblk0p1
 		;;
 	*)
 		return 1
@@ -79,16 +83,16 @@ platform_do_upgrade() {
 }
 
 platform_check_image() {
-	local board=$(board_name)
+	local board=$(octeon_board_name)
 
 	case "$board" in
-	er | \
-	erlite)
+	erlite | \
+	er)
 		local tar_file="$1"
 		local kernel_length=`(tar xf $tar_file sysupgrade-$board/kernel -O | wc -c) 2> /dev/null`
 		local rootfs_length=`(tar xf $tar_file sysupgrade-$board/root -O | wc -c) 2> /dev/null`
 		[ "$kernel_length" = 0 -o "$rootfs_length" = 0 ] && {
-			echo "The upgrade image is corrupt."
+			echo "The upgarde image is corrupt."
 			return 1
 		}
 		return 0

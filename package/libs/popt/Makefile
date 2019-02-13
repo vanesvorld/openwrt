@@ -9,14 +9,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=popt
 PKG_VERSION:=1.16
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:= \
-	http://distfiles.gentoo.org/distfiles/ \
-	http://distcache.freebsd.org/ports-distfiles/ \
-	http://rpm5.org/files/popt/
-PKG_HASH:=e728ed296fe9f069a0e005003c3d6b2dde3d9cad453422a10d6558616d304cc8
+PKG_SOURCE_URL:=http://rpm5.org/files/popt/
+PKG_MD5SUM:=3743beefa3dd6247a73f8f7a32c14c33
 PKG_LICENSE:=MIT
 
 PKG_FIXUP:=autoreconf
@@ -34,7 +31,6 @@ define Package/libpopt
   CATEGORY:=Libraries
   TITLE:=A command line option parsing library
   URL:=http://rpm5.org/files/popt/
-  ABI_VERSION:=0
 endef
 
 define Build/Configure
@@ -57,6 +53,10 @@ define Package/libpopt/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpopt.so.* $(1)/usr/lib/
 endef
+
+$(eval $(call RequireCommand,xgettext, \
+	$(PKG_NAME) requires the GNU gettext development package installed on the local system to build. \
+))
 
 $(eval $(call BuildPackage,libpopt))
 

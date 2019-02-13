@@ -1,7 +1,7 @@
 /*
  * Kernel relocation stub for MIPS devices
  *
- * Copyright (C) 2015 Felix Fietkau <nbd@nbd.name>
+ * Copyright (C) 2015 Felix Fietkau <nbd@openwrt.org>
  *
  * Based on:
  *

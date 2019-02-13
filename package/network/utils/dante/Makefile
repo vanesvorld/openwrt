@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dante
-PKG_VERSION:=1.4.1
-PKG_RELEASE:=3
+PKG_VERSION:=1.2.2
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.inet.no/dante/files/
-PKG_HASH:=b6d232bd6fefc87d14bf97e447e4fcdeef4b28b16b048d804b50b48f261c4f53
+PKG_MD5SUM:=69b9d6234154d7d6a91fcbd98c68e62a
 
-PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
+PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 PKG_LICENSE:=BSD-4-Clause
 
 PKG_FIXUP:=autoreconf
@@ -23,14 +23,14 @@ PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
+TARGET_CFLAGS += -D_GNU_SOURCE
 CONFIGURE_ARGS += \
 	--without-upnp \
 	--without-pam \
 	--disable-libwrap
 
 CONFIGURE_VARS += \
-	ac_cv_search_pam_start="" \
-	ac_cv_func_sched_setscheduler=no
+	CC="$(TARGET_CC) $(TARGET_CFLAGS)"
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
@@ -50,7 +50,7 @@ Dante is a circuit-level firewall/proxy that can be used to provide convenient
 and secure network connectivity, requiring only that the server Dante runs on
 has external network connectivity. Dante is used daily by Fortune 100 companies
 and large international organizations, either as a standard SOCKS server or as
-a "reverse proxy".
+a "reverse proxy". 
 endef
 
 define Package/libsocks
@@ -58,7 +58,6 @@ define Package/libsocks
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE+= Library
-  ABI_VERSION:=0
 endef
 
 define Package/libsocks/description
@@ -68,7 +67,7 @@ endef
 
 define Package/libsocks/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libsocks.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libsocks.so* $(1)/usr/lib/
 endef
 
 
